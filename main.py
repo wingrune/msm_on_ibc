@@ -3,21 +3,17 @@ from nilearn import plotting
 from run_msm import run_msm
 
 # Load spherical mesh produced with `mris_convert`
-spherical_mesh = 'data/freesurfer/subjects/fsaverage5/surf/lh.sphere.gii'
+spherical_mesh = './data/lh.sphere.gii'
 
 
 data_to_load = {
     'sub-07': [
-        '/storage/store2/data/ibc/derivatives/sub-07/ses-01/'
-        'res_fsaverage5_hcp_language_ffx/stat_surf/story-math_lh.gii',
-        '/storage/store2/data/ibc/derivatives/sub-07/ses-02/'
-        'res_fsaverage5_hcp_relational_ffx/stat_surf/relational_lh.gii',
+        './data/sub-07_story-math_lh.gii',
+        './data/sub-07_relational_lh.gii',
     ],
     'sub-04': [
-        '/storage/store2/data/ibc/derivatives/sub-04/ses-01/'
-        'res_fsaverage5_hcp_language_ffx/stat_surf/story-math_lh.gii',
-        '/storage/store2/data/ibc/derivatives/sub-04/ses-02/'
-        'res_fsaverage5_hcp_relational_ffx/stat_surf/relational_lh.gii',
+        './data/sub-04_story-math_lh.gii',
+        './data/sub-04_relational_lh.gii',
     ]
 }
 
@@ -34,21 +30,21 @@ print(transformed_func)
 import matplotlib.pyplot as plt  # noqa: E402
 
 plotting.plot_surf(
-    'data/freesurfer/subjects/fsaverage5/surf/lh.inflated',
+    './data/lh.inflated',
     transformed_func, title='Transformed Data - story - math'
 )
 plt.savefig('transformed.pdf')
 
 
 plotting.plot_surf(
-    'data/freesurfer/subjects/fsaverage5/surf/lh.inflated',
+    './data/lh.inflated',
     data_to_load['sub-04'][0],
     title='Origin Data - story - math'
 )
 plt.savefig('origin.pdf')
 
 plotting.plot_surf(
-    'data/freesurfer/subjects/fsaverage5/surf/lh.inflated',
+    './data/lh.inflated',
     data_to_load['sub-07'][0],
     title='Reference Data - story - math'
 )

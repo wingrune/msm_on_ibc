@@ -97,7 +97,7 @@ def run_msm(in_data_list, in_mesh, ref_data_list, ref_mesh=None,
             data_files[sub] = filename
 
     cmd = ' '.join([
-        "/usr/local/fsl/bin/msm",
+        "/mnt/e/usr/local/fsl/bin/msm",
         f"--inmesh={in_mesh}",
         f"--refmesh={ref_mesh}",
         f"--indata={data_files['in_data']}",
