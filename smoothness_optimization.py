@@ -67,27 +67,39 @@ for input_fname in data_input:
 
 # split data to train and test
 
-train_data_input = random.sample(list(data.keys()), int(len(data)*0.8))
+new_split = False # if true, a new split will be created, if false, data will be loaded
 
-train_data = {
-    input_fname : data[input_fname]
-    for input_fname in train_data_input
-}
+if new_split:
+    train_data_input = random.sample(list(data.keys()), int(len(data)*0.8))
 
-test_data = {
-    input_fname : data[input_fname]
-    for input_fname in list(data.keys())
-    if input_fname not in train_data_input
-}
+    train_data = {
+        input_fname : data[input_fname]
+        for input_fname in train_data_input
+    }
 
-with open("train.json", "w") as outfile:
-    json.dump(train_data, outfile)
+    test_data = {
+        input_fname : data[input_fname]
+        for input_fname in list(data.keys())
+        if input_fname not in train_data_input
+    }
 
-with open("test.json", "w") as outfile:
-    json.dump(test_data, outfile)
+    with open("train.json", "w") as outfile:
+        json.dump(train_data, outfile)
 
-lambd = [0.01, 0.1, 1, 10]
+    with open("test.json", "w") as outfile:
+        json.dump(test_data, outfile)
+else:
+    train_data_fname = "train.json"
+    test_data_fname = "test.json"
+    with open(train_data_fname) as json_file:
+        train_data = json.load(json_file)
+    
+    with open(test_data_fname) as json_file:
+        test_data = json.load(json_file)
 
+lambd = [0.01, 0.1, 1, 10, 100, 1000]
+
+train_mode = False #if true will run MSM, if false will use an existing run_MSM output
 cross_correlation = {}
 base_cross_correlation = {} # cross-correlation without deformation
 
@@ -101,13 +113,14 @@ for lam in lambd:
     with open("/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain", "w") as f:
         f.writelines(list_of_lines)
 
-    '''#running MSM with train data
-    transformed_mesh, transformed_func = run_msm(
-        in_data_list=list(train_data.keys()), in_mesh=spherical_mesh,
-        ref_data_list=list(test_data.values()),
-        debug=False, verbose=True, output_dir='test_outputs_lambda' + str(lam)
-    )
-    '''
+    #running MSM with train data
+    if train_mode:
+        transformed_mesh, transformed_func = run_msm(
+            in_data_list=list(train_data.keys()), in_mesh=spherical_mesh,
+            ref_data_list=list(train_data.values()),
+            debug=False, verbose=True, output_dir='test_outputs_lambda' + str(lam)
+        )
+
     #testing MSM with test data
 
     with TemporaryDirectory(prefix='./') as dir_name:
@@ -134,10 +147,10 @@ for lam in lambd:
             test_transformed = os.path.join(dir_name, "test_transformed_and_projected" + input_fname.split(subject_input)[1])
             cmd = ' '.join([
             "/mnt/e/usr/local/fsl/bin/msmresample",
-            f"{spherical_mesh} ",
+            f"{deformed} ",
             test_transformed,
             f"-labels {input_fname_preprocessed} ",
-            f"-project {deformed}",
+            f"-project {spherical_mesh}",
             ])
             exit_code = os.system(cmd)
             if exit_code != 0:
@@ -156,6 +169,8 @@ print(cross_correlation)
 print(base_cross_correlation)
 plt.xlabel("Lambda")
 plt.ylabel("Cross-correlation")
+plt.title("Test data")
 plt.semilogx(lambd, list(cross_correlation.values()), label = "Cross-correlation after transformation")
 plt.semilogx(lambd, list(base_cross_correlation.values()), label = "Cross-correlation before transformation")
-plt.savefig("lambd")
+plt.legend()
+plt.savefig("lambda_optimization_test_data.png")

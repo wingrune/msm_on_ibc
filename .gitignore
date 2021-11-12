@@ -2,3 +2,4 @@
 *.png
 *.gii
 test_outputs*
+*.json
