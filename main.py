@@ -18,11 +18,10 @@ data_to_load = {
 }
 
 transformed_mesh, transformed_func = run_msm(
-    in_data_list=data_to_load['sub-04'], in_mesh=spherical_mesh,
-    ref_data_list=data_to_load['sub-07'],
+    in_data_list=data_to_load['sub-07'], in_mesh=spherical_mesh,
+    ref_data_list=data_to_load['sub-04'],
     debug=False, verbose=True, output_dir='test_outputs'
 )
-print(transformed_func)
 
 
 ##################
@@ -30,25 +29,28 @@ print(transformed_func)
 import matplotlib.pyplot as plt  # noqa: E402
 
 plotting.plot_surf(
-    './data/lh.inflated',
+    './data/lh.sphere',
     transformed_func, title='Transformed Data - relational',
-    cmap="RdBu"
+    cmap="RdBu",
+    threshold=3
 )
-plt.savefig('transformed_relational.png')
+plt.savefig('transformed_relational_7_to_4.png')
 
 
 plotting.plot_surf(
-    './data/lh.inflated',
-    data_to_load['sub-04'][1],
-    title='Origin Data - relational',
-    cmap="RdBu"
-)
-plt.savefig('origin_relational.png')
-
-plotting.plot_surf(
-    './data/lh.inflated',
+    './data/lh.sphere',
     data_to_load['sub-07'][1],
-    title='Reference Data - relational',
-    cmap="RdBu"
+    title='Origin Data - relational',
+    cmap="RdBu",
+    threshold=3
 )
-plt.savefig('reference_relational.png')
+plt.savefig('origin_relational_7_to_4.png')
+
+plotting.plot_surf(
+    './data/lh.sphere',
+    data_to_load['sub-04'][1],
+    title='Reference Data - relational',
+    cmap="RdBu",
+    threshold=3
+)
+plt.savefig('reference_relational_7_to_4.png')

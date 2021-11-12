@@ -1,2 +1,4 @@
 *.pdf
 *.png
+*.gii
+test_outputs*

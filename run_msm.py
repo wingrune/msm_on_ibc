@@ -83,7 +83,6 @@ def run_msm(in_data_list, in_mesh, ref_data_list, ref_mesh=None,
             # sure it is well specified
             mesh = nib.load(mesh_file)
             coordsys = mesh.darrays[0].coordsys
-
             data = nib.load(datafiles[0])
             data.darrays = prepare_darrays(data.darrays, coordsys)
             for fname in datafiles[1:]:
@@ -95,13 +94,14 @@ def run_msm(in_data_list, in_mesh, ref_data_list, ref_mesh=None,
             filename = str(Path(dir_name) / f'{sub}.func.gii')
             data.to_filename(filename)
             data_files[sub] = filename
-
+ 
     cmd = ' '.join([
         "/mnt/e/usr/local/fsl/bin/msm",
         f"--inmesh={in_mesh}",
         f"--refmesh={ref_mesh}",
         f"--indata={data_files['in_data']}",
         f"--refdata={data_files['ref_data']}",
+        "--conf=/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain "
         f"-o {output_dir}/",
         "-f ASCII",
         "--verbose" if verbose else '',
