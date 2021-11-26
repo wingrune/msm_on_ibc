@@ -1,19 +1,19 @@
+import dotenv
 import os
 import json
+import matplotlib.pyplot as plt  # noqa: E402
+import nibabel as nib
+import numpy as np
 from pathlib import Path
-from posixpath import dirname
+from scipy import stats
 from tempfile import TemporaryDirectory
 import random
 
-from nilearn import plotting
-
-import numpy as np
-import pandas as pd
-from scipy import stats
-
-import nibabel as nib
-import matplotlib.pyplot as plt  # noqa: E402
 from run_msm import run_msm
+
+dotenv.load_dotenv()
+FSL_PATH = os.getenv("FSL_PATH")
+
 
 def is_same_coordsys(c1, c2):
     return (c1.dataspace == c2.dataspace and c1.xformspace == c2.xformspace
@@ -38,7 +38,7 @@ def prepare_darrays(darrays, coordsys):
 # Load spherical mesh produced with `mris_convert`
 spherical_mesh = './data/lh.sphere.gii'
 
-#load data
+# load data
 subject_input = 'sub-07'
 subject_reference = 'sub-04'
 data_path = './data/'
@@ -54,7 +54,7 @@ train_mode = False #if true will run MSM, if false will use an existing run_MSM 
 data = {}
 
 data_input = [
-    os.path.join(data_path,file)
+    os.path.join(data_path, file)
     for file in os.listdir(data_path)
     if subject_input in file and 'lh' in file and (
         'ses-00' in file or 'ses-01' in file or 'ses-02' in file or 'ses-04' in file
@@ -62,7 +62,7 @@ data_input = [
 ]
 
 data_reference = [
-    os.path.join(data_path,file)
+    os.path.join(data_path, file)
     for file in os.listdir(data_path)
     if subject_reference in file and 'lh' in file and (
         'ses-00' in file or 'ses-01' in file or 'ses-02' in file or 'ses-04' in file
@@ -101,22 +101,23 @@ else:
     test_data_fname = "test.json"
     with open(train_data_fname) as json_file:
         train_data = json.load(json_file)
-    
+
     with open(test_data_fname) as json_file:
         test_data = json.load(json_file)
 
+epsilons = [0.01, 0.1, 1, 10, 100, 1000]
 
 cross_correlation = {}
 base_cross_correlation = {} # cross-correlation without deformation
 
-for lam in lambd:
+for epsilon in epsilons:
 
     #replacing lambda values in config file
-    with open("/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain", "r") as f:
+    with open(f"{FSL_PATH}/config/basic_configs/config_standard_MSM_strain", "r") as f:
         list_of_lines = f.readlines()
-        list_of_lines[3] = f"--lambda={lam},{lam},{lam},{lam}\n"
+        list_of_lines[3] = f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}\n"
 
-    with open("/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain", "w") as f:
+    with open(f"{FSL_PATH}/config/basic_configs/config_standard_MSM_strain", "w") as f:
         f.writelines(list_of_lines)
 
     #running MSM with train data
@@ -124,16 +125,16 @@ for lam in lambd:
         transformed_mesh, transformed_func = run_msm(
             in_data_list=list(train_data.keys()), in_mesh=spherical_mesh,
             ref_data_list=list(train_data.values()),
-            debug=False, verbose=True, output_dir='test_outputs_lambda' + str(lam)
+            debug=False, verbose=True, output_dir='test_outputs_lambda' + str(epsilon)
         )
 
     #testing MSM with test data
 
     with TemporaryDirectory(prefix='./') as dir_name:
-        dir_name = 'test_outputs_lambda' + str(lam)
+        dir_name = 'test_outputs_lambda' + str(epsilon)
         deformed = os.path.join(dir_name, "transformed_in_mesh.surf.gii")
-        cross_correlation[lam] = 0
-        base_cross_correlation[lam] = 0
+        cross_correlation[epsilon] = 0
+        base_cross_correlation[epsilon] = 0
         # Load the coordsys from the mesh associated to the data to make
         # sure it is well specified
         mesh = nib.load(spherical_mesh)
@@ -152,7 +153,7 @@ for lam in lambd:
 
             test_transformed = os.path.join(dir_name, "test_transformed_and_projected" + input_fname.split(subject_input)[1])
             cmd = ' '.join([
-            "/mnt/e/usr/local/fsl/bin/msmresample",
+            f"{FSL_PATH}/bin/msmresample",
             f"{deformed} ",
             test_transformed,
             f"-labels {input_fname_preprocessed} ",
@@ -161,22 +162,22 @@ for lam in lambd:
             exit_code = os.system(cmd)
             if exit_code != 0:
                 raise RuntimeError(f"Failed to run MSM with command:\n{cmd}")
-    
+
             #compute cross_correlation
             transformed_data = nib.load(test_transformed+".func.gii")
             transformed_data.darrays = prepare_darrays(transformed_data.darrays, coordsys)
             data_reference = nib.load(reference_fname)
             data_reference.darrays = prepare_darrays(data_reference.darrays, coordsys)
 
-            cross_correlation[lam] += stats.pearsonr(transformed_data.darrays[0].data, data_reference.darrays[0].data)[0]/len(test_data)
-            base_cross_correlation[lam] += stats.pearsonr(data_input.darrays[0].data, data_reference.darrays[0].data)[0]/len(test_data)
-    
+            cross_correlation[epsilon] += stats.pearsonr(transformed_data.darrays[0].data, data_reference.darrays[0].data)[0]/len(test_data)
+            base_cross_correlation[epsilon] += stats.pearsonr(data_input.darrays[0].data, data_reference.darrays[0].data)[0]/len(test_data)
+
 print(cross_correlation)
 print(base_cross_correlation)
 plt.xlabel("Lambda")
 plt.ylabel("Pearson correlation")
 plt.title("Test data")
-plt.plot(lambd, list(cross_correlation.values()), '-o', label = "Pearson correlation after transformation")
-plt.plot(lambd, list(base_cross_correlation.values()), '-o', label = "Pearson correlation before transformation")
+plt.semilogx(epsilons, list(cross_correlation.values()), label = "Cross-correlation after transformation")
+plt.semilogx(epsilons, list(base_cross_correlation.values()), label = "Cross-correlation before transformation")
 plt.legend()
 plt.savefig("lambda_optimization_test_data.png")
