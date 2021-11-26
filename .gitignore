@@ -3,3 +3,8 @@
 *.gii
 test_outputs*
 *.json
+
+.sync-config.cson
+
+.env.development
+.env.production
