@@ -1,3 +1,4 @@
+import dotenv
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -6,6 +7,10 @@ import numpy as np
 import pandas as pd
 
 import nibabel as nib
+
+dotenv.load_dotenv()
+FSL_PATH = os.getenv("FSL_PATH")
+FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
 
 
 def is_same_coordsys(c1, c2):
@@ -29,7 +34,7 @@ def prepare_darrays(darrays, coordsys):
 
 
 def run_msm(in_data_list, in_mesh, ref_data_list, ref_mesh=None,
-            output_dir=None, debug=False, verbose=False):
+            output_dir=None, debug=False, verbose=False, fsl_config_path=FSL_CONFIG_PATH):
     """Run MSM on a list of contrast between in data and ref data
 
     Parameters
@@ -94,14 +99,14 @@ def run_msm(in_data_list, in_mesh, ref_data_list, ref_mesh=None,
             filename = str(Path(dir_name) / f'{sub}.func.gii')
             data.to_filename(filename)
             data_files[sub] = filename
- 
+
     cmd = ' '.join([
-        "/mnt/e/usr/local/fsl/bin/msm",
+        f"{FSL_PATH}/fsl/bin/msm",
         f"--inmesh={in_mesh}",
         f"--refmesh={ref_mesh}",
         f"--indata={data_files['in_data']}",
         f"--refdata={data_files['ref_data']}",
-        "--conf=/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain "
+        f"--conf={FSL_CONFIG_PATH} ",
         f"-o {output_dir}/",
         "-f ASCII",
         "--verbose" if verbose else '',
