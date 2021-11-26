@@ -43,6 +43,12 @@ subject_input = 'sub-07'
 subject_reference = 'sub-04'
 data_path = './data/'
 
+#parameters
+random.seed(42)
+lambd = [0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1]
+new_split = False # if true, a new split will be created, if false, data will be loaded
+train_mode = False #if true will run MSM, if false will use an existing run_MSM output
+
 # data - dictionary of type: input_fname -> reference_fname
 
 data = {}
@@ -50,13 +56,17 @@ data = {}
 data_input = [
     os.path.join(data_path,file)
     for file in os.listdir(data_path)
-    if subject_input in file and 'lh' in file and 'standard' in file
+    if subject_input in file and 'lh' in file and (
+        'ses-00' in file or 'ses-01' in file or 'ses-02' in file or 'ses-04' in file
+    )
 ]
 
 data_reference = [
     os.path.join(data_path,file)
     for file in os.listdir(data_path)
-    if subject_reference in file and 'lh' in file and 'standard' in file
+    if subject_reference in file and 'lh' in file and (
+        'ses-00' in file or 'ses-01' in file or 'ses-02' in file or 'ses-04' in file
+    )
 ]
 
 for input_fname in data_input:
@@ -64,10 +74,8 @@ for input_fname in data_input:
         if reference_fname.split(subject_reference)[1] == input_fname.split(subject_input)[1]:
             data[input_fname] = reference_fname
 
-
+print(len(data))
 # split data to train and test
-
-new_split = False # if true, a new split will be created, if false, data will be loaded
 
 if new_split:
     train_data_input = random.sample(list(data.keys()), int(len(data)*0.8))
@@ -97,9 +105,7 @@ else:
     with open(test_data_fname) as json_file:
         test_data = json.load(json_file)
 
-lambd = [0.01, 0.1, 1, 10, 100, 1000]
 
-train_mode = False #if true will run MSM, if false will use an existing run_MSM output
 cross_correlation = {}
 base_cross_correlation = {} # cross-correlation without deformation
 
@@ -168,9 +174,9 @@ for lam in lambd:
 print(cross_correlation)
 print(base_cross_correlation)
 plt.xlabel("Lambda")
-plt.ylabel("Cross-correlation")
+plt.ylabel("Pearson correlation")
 plt.title("Test data")
-plt.semilogx(lambd, list(cross_correlation.values()), label = "Cross-correlation after transformation")
-plt.semilogx(lambd, list(base_cross_correlation.values()), label = "Cross-correlation before transformation")
+plt.plot(lambd, list(cross_correlation.values()), '-o', label = "Pearson correlation after transformation")
+plt.plot(lambd, list(base_cross_correlation.values()), '-o', label = "Pearson correlation before transformation")
 plt.legend()
 plt.savefig("lambda_optimization_test_data.png")
