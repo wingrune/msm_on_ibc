@@ -34,7 +34,8 @@ def prepare_darrays(darrays, coordsys):
 
 
 def run_msm(in_data_list, in_mesh, ref_data_list, ref_mesh=None,
-            output_dir=None, debug=False, verbose=False, fsl_config_path=FSL_CONFIG_PATH):
+            output_dir=None, debug=False, verbose=False,
+            fsl_config_path=FSL_CONFIG_PATH):
     """Run MSM on a list of contrast between in data and ref data
 
     Parameters

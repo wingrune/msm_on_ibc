@@ -40,7 +40,7 @@ class MSM_Alignment:
         source_data,
         target_data,
         mesh=fsaverage5.sphere_left,
-        output_dir=None,
+        output_dir=".",
     ):
         """
         Fit MSM alignment between source and target datasets.
@@ -73,7 +73,7 @@ class MSM_Alignment:
         )
 
         self.transformed_mesh = transformed_mesh
-        self.transfored_mesh_path = (
+        self.transformed_mesh_path = (
             Path(output_dir) / "transformed_in_mesh.surf.gii"
         )
         self.transformed_func = transformed_func
@@ -122,7 +122,7 @@ class MSM_Alignment:
             # Map source_data onto target mesh
             cmd = " ".join(
                 [
-                    f"{FSL_PATH}/bin/msmresample",
+                    f"{FSL_PATH}/fsl/bin/msmresample",
                     f"{self.transformed_mesh_path} ",
                     transformed_path,
                     f"-labels {source_filename} ",
