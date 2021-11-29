@@ -106,8 +106,6 @@ def run_msm(
 
     data_files = {}
     with TemporaryDirectory(dir=output_dir) as dir_name:
-        # dir_name = "test_outputs"
-
         for sub, (datafiles, mesh_file) in data_to_load.items():
 
             # Load the coordsys from the mesh associated to the data to make

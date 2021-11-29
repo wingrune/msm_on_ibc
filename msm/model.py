@@ -23,7 +23,7 @@ FSL_PATH = os.getenv("FSL_PATH")
 fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
 
 
-class MSM_Alignment:
+class MSMModel:
     def __init__(self, epsilon=0.1, **kwargs):
         """
         Initialize MSM object.
