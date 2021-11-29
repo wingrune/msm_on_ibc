@@ -7,4 +7,7 @@ test_outputs*
 .sync-config.cson
 
 .env.development
+.env.staging
 .env.production
+
+__pycache__
