@@ -1,26 +1,29 @@
-import dotenv
-
-# import importlib
+from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
 import os
 from pathlib import Path
-
-# from . import run_msm
-
-from run_msm import prepare_darrays, run_msm
 from tempfile import TemporaryDirectory
 
-# run_msm = importlib.import_module(".run_msm", package="msm")
+from msm.run import prepare_darrays, run_msm
 
-dotenv.load_dotenv()
+ENV = os.getenv("ENV")
+
+if ENV == "production":
+    load_dotenv(".env.production")
+elif ENV == "staging":
+    load_dotenv(".env.staging")
+elif ENV == "development":
+    load_dotenv(".env.development")
+load_dotenv(".env")
+
 FSL_PATH = os.getenv("FSL_PATH")
 # FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
 
 fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
 
 
-class MSM_Alignment:
+class MSMModel:
     def __init__(self, epsilon=0.1, **kwargs):
         """
         Initialize MSM object.
@@ -41,6 +44,8 @@ class MSM_Alignment:
         target_data,
         mesh=fsaverage5.sphere_left,
         output_dir=".",
+        verbose=False,
+        debug=False,
     ):
         """
         Fit MSM alignment between source and target datasets.
@@ -67,8 +72,8 @@ class MSM_Alignment:
             in_data_list=source_data,
             in_mesh=mesh,
             ref_data_list=target_data,
-            debug=False,
-            verbose=True,
+            debug=debug,
+            verbose=verbose,
             output_dir=output_dir,
         )
 
@@ -111,7 +116,7 @@ class MSM_Alignment:
             prepare_darrays(data_input.darrays, self.coordsys)
         )
 
-        with TemporaryDirectory(prefix="./") as dir_name:
+        with TemporaryDirectory(dir="./") as dir_name:
             # Export generated map to temp file
             # because MSM needs file paths
             source_filename = str(Path(dir_name) / "input_test.func.gii")
@@ -122,7 +127,7 @@ class MSM_Alignment:
             # Map source_data onto target mesh
             cmd = " ".join(
                 [
-                    f"{FSL_PATH}/fsl/bin/msmresample",
+                    f"{FSL_PATH}/bin/msmresample",
                     f"{self.transformed_mesh_path} ",
                     transformed_path,
                     f"-labels {source_filename} ",

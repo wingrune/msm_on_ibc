@@ -1,0 +1,3 @@
+/mnt/e/usr/local/fsl/bin/msm --inmesh=./data/lh.sphere.gii --refmesh=./data/lh.sphere.gii --indata=test_outputs/in_data.func.gii --refdata=test_outputs/ref_data.func.gii --conf=/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain -o ./ -f ASCII --verbose 
+---------------------------------------------
+
