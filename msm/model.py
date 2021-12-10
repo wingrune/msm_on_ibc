@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
+from scipy.spatial.distance import cosine
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -145,3 +146,53 @@ class MSMModel:
             )
 
             return transformed_contrast_map
+
+    def score(self, source_data, target_data):
+        """
+        Transform source contrast maps using fitted MSM
+        and compute cosine distance with actual target constrast maps.
+
+        Parameters
+        ----------
+        source_data: ndarray(n_samples, n)
+            Contrast maps for source subject
+        target_data: ndarray(n_samples, n)
+            Contrast maps for target subject
+
+        Returns
+        -------
+        score: float
+            cosine distance between
+            self.transform(source_data) with target_data
+        """
+
+        transformed_data = self.transform(source_data)
+        score = cosine(transformed_data.T, target_data.T)
+
+        return score
+
+    def load_model(self, model_filename, mesh):
+        """
+        Load fitted model from file
+
+        Parameters
+        ----------
+        model_filename: str
+            Path to saved fitted model.
+            After fitting the model is usually saved in
+            Path(output_dir) / "transformed_in_mesh.surf.gii"
+
+        mesh: str
+            Path to mesh used for source and target
+
+        Returns
+        -------
+        self: object
+            Loaded fitted alignment
+        """
+        self.transformed_mesh_path = model_filename
+        self.mesh_path = mesh
+
+        mesh_loaded = nib.load(mesh)
+        self.coordsys = mesh_loaded.darrays[0].coordsys
+        return self
