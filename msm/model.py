@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
-from scipy.spatial.distance import cosine
+from sklearn.metrics import r2_score
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -167,7 +167,7 @@ class MSMModel:
         """
 
         transformed_data = self.transform(source_data)
-        score = cosine(transformed_data.T, target_data.T)
+        score = r2_score(transformed_data.T, target_data.T)
 
         return score
 
