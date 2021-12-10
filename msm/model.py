@@ -43,7 +43,7 @@ class MSMModel:
         self,
         source_data,
         target_data,
-        mesh=fsaverage5.sphere_left,
+        mesh_file=fsaverage5.sphere_left,
         output_dir=".",
         verbose=False,
         debug=False,
@@ -53,12 +53,12 @@ class MSMModel:
 
         Parameters
         ----------
-        source_data: list of str
-            List of paths of all contrast maps for source subject
-        target_data: list of str
-            List of paths of all contrast maps for target subject.
+        source_data: ndarray(n_samples, n_features)
+            Contrast maps for source subject.
+        target_data: ndarray(n_samples, n_features)
+            Contrast maps for target subject.
             Length should match that of source_data
-        mesh: str
+        mesh_file: str
             Path to mesh used for source and target
         output_dir: str
             Path to outputed files
@@ -68,24 +68,57 @@ class MSMModel:
         self: object
             Fitted alignment
         """
+        # To use properly MSM implementation by FSL we need to transform
+        # data to nifti images
+        with TemporaryDirectory(dir=output_dir) as dir_name:
+            source_filenames = []
+            target_filenames = []
+            mesh = nib.load(mesh_file)
+            coordsys = mesh.darrays[0].coordsys
+            for i, contrast in enumerate(source_data):
+                filename = str(Path(dir_name) / f"source_{i}.func.gii")
+                source_filenames.append(filename)
+                
+                contrast_data_array = nib.gifti.gifti.GiftiDataArray(
+                    data=contrast,
+                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
+                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
+                    coordsys=coordsys
+                )
+                contrast_image = nib.gifti.gifti.GiftiImage()
+                contrast_image.add_gifti_data_array(contrast_data_array)
+                contrast_image.to_filename(filename)
 
-        transformed_mesh, transformed_func = run_msm(
-            in_data_list=source_data,
-            in_mesh=mesh,
-            ref_data_list=target_data,
-            debug=debug,
-            verbose=verbose,
-            output_dir=output_dir,
-        )
+            for i, contrast in enumerate(target_data):
+                filename = str(Path(dir_name) / f"target_{i}.func.gii")
+                target_filenames.append(filename)
+                contrast_data_array = nib.gifti.gifti.GiftiDataArray(
+                    data=contrast,
+                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
+                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
+                    coordsys=coordsys
+                )
+                contrast_image = nib.gifti.gifti.GiftiImage()
+                contrast_image.add_gifti_data_array(contrast_data_array)
+                contrast_image.to_filename(filename)
+
+            transformed_mesh, transformed_func = run_msm(
+                in_data_list=source_filenames,
+                in_mesh=mesh_file,
+                ref_data_list=target_filenames,
+                debug=debug,
+                verbose=verbose,
+                output_dir=output_dir,
+            )
 
         self.transformed_mesh = transformed_mesh
         self.transformed_mesh_path = (
             Path(output_dir) / "transformed_in_mesh.surf.gii"
         )
         self.transformed_func = transformed_func
-        self.mesh_path = mesh
+        self.mesh_path = mesh_file
 
-        mesh_loaded = nib.load(mesh)
+        mesh_loaded = nib.load(mesh_file)
         self.coordsys = mesh_loaded.darrays[0].coordsys
 
         return self

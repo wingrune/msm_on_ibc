@@ -1,9 +1,8 @@
 # An example for running MSM_Alignment.py
-
+import numpy as np
 import nibabel as nib
 import os
-from scipy.stats import pearsonr
-from scipy.spatial.distance import cosine
+
 import sys
 
 # Define env variables manually since they won't be
@@ -49,25 +48,39 @@ target_data = [
 # %% Fit model
 # print("Fitting model...")
 # model.fit(source_data, target_data, mesh="./data/lh.sphere.gii")
-"""
+
+# making a ndarray of data
+source_array = np.stack(
+    [
+        nib.load(source)
+        .darrays[0]
+        .data
+        for source in source_data
+    ],
+    axis=0,
+)
+
+target_array = np.stack(
+    [
+        nib.load(target)
+        .darrays[0]
+        .data
+        for target in target_data
+    ],
+    axis=0,
+)
+
+print(source_array.shape)
+print(target_array.shape)
 MSM.fit(
-    source_data,
-    target_data,
-    # mesh="/storage/store2/work/athual/fsaverage/lh.sphere.gii",
+    source_array,
+    target_array,
+    # mesh_file="/storage/store2/work/athual/fsaverage/lh.sphere.gii",
     # output_dir="/storage/store2/work/athual/outputs/"
     # "_051_alignment_method_comparison",
-    mesh="../data/lh.sphere.gii",
+    mesh_file="../data/lh.sphere.gii",
     output_dir="../outputs/"
     "_051_alignment_method_comparison",
-)
-"""
-
-# %% Fit model
-
-print("Loading model...")
-MSM.load_model(
-    model_filename="../test_outputs_lambda_39_0.1/transformed_in_mesh.surf.gii",
-    mesh="../data/lh.sphere.gii"
 )
 
 # %% Evaluate model
@@ -92,9 +105,5 @@ transformed_map = MSM.transform(source_test_data)
 # %% Load target map
 target_map = nib.load(target_test_data).darrays[0].data
 
-# %% Compute correlation
-score = pearsonr(transformed_map, target_map)
-print(score)
-score = cosine(transformed_map, target_map)
-print(score)
+# %% Compute R2 score
 print(MSM.score(source_test_data, target_map))
