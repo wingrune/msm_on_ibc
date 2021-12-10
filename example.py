@@ -48,3 +48,4 @@ target_map = nib.load(target_test_data).darrays[0].data
 
 # Compute correlation
 score = pearsonr(transformed_map, target_map)
+print(score)
