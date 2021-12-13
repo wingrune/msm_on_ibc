@@ -50,11 +50,10 @@ def prepare_darrays(darrays, coordsys):
 
 
 def run_msm(
-    in_data_list,
-    in_mesh,
-    ref_data_list,
-    ref_mesh=None,
-    output_dir=None,
+    source_contrasts_list,
+    source_mesh,
+    target_contrasts_list,
+    target_mesh=None,
     debug=False,
     verbose=False,
     fsl_config_path=FSL_CONFIG_PATH,
@@ -63,18 +62,19 @@ def run_msm(
 
     Parameters
     ----------
-    in_data_list, ref_data_list : list of str
+    source_contrasts_list, target_contrasts_list : list of str
         Data used as features for the registration. The data should be provided
         as a list of GIFTI files, that will be merged to perform
         the multimodale registration.
-    in_mesh, ref_mesh : str
-        Spherical mesh on wich all data from in_data_list or ref_data_list
-        live. The mesh should be given as a GIFTI file. Not that if ref_mesh is
-        not specified, the in_mesh will be used for all input data.
+    source_mesh, target_mesh : str
+        Spherical mesh on which all data from source_contrasts_list or
+        target_contrasts_list live. The mesh should be given as a GIFTI file.
+        Note that if target_mesh is not specified,
+        the source_mesh will be used for all input data.
     output_dir : str or Path
         Directory in which to save the outputs. It will contain in GIFTI files
-        for the transformed data (in the ref_mesh) and the transformed_mesh in
-        which the in_data are aligned to ref_data.
+        for the transformed data (in the target_mesh) and the transformed_mesh
+        in which the source_subject are aligned to target_subject.
     debug : bool
         Flag to run quickly first level of the optimization.
     verbose : bool
@@ -83,56 +83,61 @@ def run_msm(
 
     Returns
     -------
-    mesh_gii : pathlib.Path
-        file holding the transformed mesh.
-    transformed_gii : pathlib.Path
-        file holding the transformed data in the ref_mesh.
+    mesh_gii : nibabel.gifti.GiftiImage
+        Image holding the transformed mesh.
+    transformed_gii : nibabel.gifti.GiftiImage
+        Image holding the transformed data in the target_mesh.
     """
 
-    if ref_mesh is None:
-        ref_mesh = in_mesh
+    if target_mesh is None:
+        target_mesh = source_mesh
 
-    if output_dir is None:
-        output_dir = "outputs"
-    output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True)
-
-    data_to_load = {
+    contrasts_to_load = {
         # Source subject data
-        "in_data": (in_data_list, in_mesh),
+        "source_subject": (source_contrasts_list, source_mesh),
         # Target subject data
-        "ref_data": (ref_data_list, ref_mesh),
+        "target_subject": (target_contrasts_list, target_mesh),
     }
 
-    data_files = {}
-    with TemporaryDirectory(dir=output_dir) as dir_name:
-        for sub, (datafiles, mesh_file) in data_to_load.items():
+    contrasts_gifti_file = {}
 
-            # Load the coordsys from the mesh associated to the data to make
-            # sure it is well specified
-            mesh = nib.load(mesh_file)
-            coordsys = mesh.darrays[0].coordsys
-            data = nib.load(datafiles[0])
-            data.darrays = prepare_darrays(data.darrays, coordsys)
-            for fname in datafiles[1:]:
-                extra_data = nib.load(fname)
-                data.darrays.extend(
-                    prepare_darrays(extra_data.darrays, coordsys)
+    with TemporaryDirectory() as tmp_dir:
+        # For source and target subjects (denoted as in and ref subjects
+        # respectively in msm), create a gifti image with all their
+        # contrast maps (denoted as "data" in msm).
+        # These maps will previously be set to use the same
+        # coordinate system as the subject mesh
+        for subject, (contrast_paths, mesh_path) in contrasts_to_load.items():
+            # Load the coordsys from the mesh associated to the data
+            # in order to make sure it is well specified
+            mesh = nib.load(mesh_path)
+            mesh_coordsys = mesh.darrays[0].coordsys
+            contrast_maps = nib.load(contrast_paths[0])
+            contrast_maps.darrays = prepare_darrays(
+                contrast_maps.darrays, mesh_coordsys
+            )
+
+            # Add other contrast maps to gifti file
+            for contrast_path in contrast_paths[1:]:
+                extra_data = nib.load(contrast_path)
+                contrast_maps.darrays.extend(
+                    prepare_darrays(extra_data.darrays, mesh_coordsys)
                 )
 
-            filename = str(Path(dir_name) / f"{sub}.func.gii")
-            data.to_filename(filename)
-            data_files[sub] = filename
+            # Save contrast map
+            filename = str(Path(tmp_dir) / f"{subject}.func.gii")
+            contrast_maps.to_filename(filename)
+            contrasts_gifti_file[subject] = filename
 
         cmd = " ".join(
             [
                 f"{FSL_PATH}/bin/msm",
-                f"--inmesh={in_mesh}",
-                f"--refmesh={ref_mesh}",
-                f"--indata={data_files['in_data']}",
-                f"--refdata={data_files['ref_data']}",
-                # f"--conf={FSL_CONFIG_PATH} ",
-                f"-o {output_dir}/",
+                f"--inmesh={source_mesh}",
+                f"--refmesh={target_mesh}",
+                f"--indata={contrasts_gifti_file['source_subject']}",
+                f"--refdata={contrasts_gifti_file['target_subject']}",
+                # f"--conf={FSL_CONFIG_PATH}",
+                f"-o {tmp_dir}/",
                 "-f ASCII",
                 "--verbose" if verbose else "",
                 "--debug --levels=1" if debug else "",
@@ -143,34 +148,31 @@ def run_msm(
         if exit_code != 0:
             raise RuntimeError(f"Failed to run MSM with command:\n{cmd}")
 
-    mesh_ascii = output_dir / "sphere.reg.asc"
-    mesh_gii = output_dir / "transformed_in_mesh.surf.gii"
+        mesh_ascii_path = Path(tmp_dir) / "sphere.reg.asc"
+        mesh_gii_path = Path(tmp_dir) / "transformed_in_mesh.surf.gii"
 
-    cmd = " ".join(
-        [
-            "surf2surf",
-            f"-i {mesh_ascii}",
-            f"-o {mesh_gii}",
-            "--outputtype=GIFTI_BIN_GZ",
-        ]
-    )
-    exit_code = os.system(cmd)
-    if exit_code != 0:
-        raise RuntimeError(
-            f"Failed to convert ASCII output to GIFTI with comand:\n{cmd}"
+        cmd = " ".join(
+            [
+                "surf2surf",
+                f"-i {mesh_ascii_path}",
+                f"-o {mesh_gii_path}",
+                "--outputtype=GIFTI_BIN_GZ",
+            ]
         )
-    mesh_ascii.unlink()
+        exit_code = os.system(cmd)
+        if exit_code != 0:
+            raise RuntimeError(
+                f"Failed to convert ASCII output to GIFTI with comand:\n{cmd}"
+            )
 
-    reprojected_dpv = output_dir / "transformed_and_reprojected.dpv"
-    transformed_data = pd.read_csv(reprojected_dpv, sep=" ", header=None)
-    transformed_data = transformed_data[4].to_numpy()
+        reprojected_dpv = Path(tmp_dir) / "transformed_and_reprojected.dpv"
+        transformed_data = pd.read_csv(reprojected_dpv, sep=" ", header=None)
+        transformed_data = transformed_data[4].to_numpy()
 
-    data = nib.load(ref_data_list[0])
-    data.darrays = data.darrays[:1]
-    data.darrays[0].data = transformed_data
+        reprojected_contrasts = nib.load(target_contrasts_list[0])
+        reprojected_contrasts.darrays = reprojected_contrasts.darrays[:1]
+        reprojected_contrasts.darrays[0].data = transformed_data
 
-    reprojected_gii = str(output_dir / "transformed_and_reprojected.func.gii")
-    data.to_filename(reprojected_gii)
-    reprojected_dpv.unlink()
+        mesh_gii = nib.load(mesh_gii_path)
 
-    return mesh_gii, reprojected_gii
+        return mesh_gii, reprojected_contrasts
