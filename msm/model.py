@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
+from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.metrics import r2_score
 import os
 from pathlib import Path
@@ -24,7 +25,7 @@ FSL_PATH = os.getenv("FSL_PATH")
 fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
 
 
-class MSMModel:
+class MSM(BaseEstimator, RegressorMixin):
     def __init__(self, epsilon=0.1, **kwargs):
         """
         Initialize MSM object.
