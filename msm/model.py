@@ -78,12 +78,16 @@ class MSMModel:
             for i, contrast in enumerate(source_data):
                 filename = str(Path(dir_name) / f"source_{i}.func.gii")
                 source_filenames.append(filename)
-                
+
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
                     data=contrast,
-                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
-                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
-                    coordsys=coordsys
+                    datatype=nib.nifti1.data_type_codes.code[
+                        "NIFTI_TYPE_FLOAT32"
+                    ],
+                    intent=nib.nifti1.intent_codes.code[
+                        "NIFTI_INTENT_POINTSET"
+                    ],
+                    coordsys=coordsys,
                 )
                 contrast_image = nib.gifti.gifti.GiftiImage()
                 contrast_image.add_gifti_data_array(contrast_data_array)
@@ -94,9 +98,13 @@ class MSMModel:
                 target_filenames.append(filename)
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
                     data=contrast,
-                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
-                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
-                    coordsys=coordsys
+                    datatype=nib.nifti1.data_type_codes.code[
+                        "NIFTI_TYPE_FLOAT32"
+                    ],
+                    intent=nib.nifti1.intent_codes.code[
+                        "NIFTI_INTENT_POINTSET"
+                    ],
+                    coordsys=coordsys,
                 )
                 contrast_image = nib.gifti.gifti.GiftiImage()
                 contrast_image.add_gifti_data_array(contrast_data_array)
