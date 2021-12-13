@@ -131,7 +131,7 @@ class MSMModel:
 
         return self
 
-    def transform(self, source_data):
+    def predict(self, source_data):
         """
         Map source contrast map onto target mesh.
 
@@ -207,7 +207,7 @@ class MSMModel:
             self.transform(source_data) with target_data
         """
 
-        transformed_data = self.transform(source_data)
+        transformed_data = self.predict(source_data)
         score = r2_score(transformed_data.T, target_data.T)
 
         return score
