@@ -11,3 +11,6 @@ test_outputs*
 .env.production
 
 __pycache__
+
+logdir*
+outputs
