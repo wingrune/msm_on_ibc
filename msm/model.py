@@ -1,13 +1,14 @@
 from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
+import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.metrics import r2_score
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from msm.run import prepare_darrays, run_msm
+from msm.run import run_msm
 
 ENV = os.getenv("ENV")
 
@@ -45,9 +46,9 @@ class MSM(BaseEstimator, RegressorMixin):
         source_data,
         target_data,
         mesh_file=fsaverage5.sphere_left,
-        output_dir=".",
         verbose=False,
         debug=False,
+        **kwargs,
     ):
         """
         Fit MSM alignment between source and target datasets.
@@ -69,15 +70,21 @@ class MSM(BaseEstimator, RegressorMixin):
         self: object
             Fitted alignment
         """
-        # To use properly MSM implementation by FSL we need to transform
-        # data to nifti images
-        with TemporaryDirectory(dir=output_dir) as dir_name:
+        with TemporaryDirectory() as tmp_dir:
             source_filenames = []
             target_filenames = []
-            mesh = nib.load(mesh_file)
+
+            self.mesh_path = mesh_file
+            mesh = nib.load(self.mesh_path)
             coordsys = mesh.darrays[0].coordsys
+            self.coordsys = coordsys
+
+            # All inputed contrast maps need to be written
+            # as gifti files in order to be used with MSM
+
+            # Write all source contrast maps
             for i, contrast in enumerate(source_data):
-                filename = str(Path(dir_name) / f"source_{i}.func.gii")
+                filename = str(Path(tmp_dir) / f"source_{i}.func.gii")
                 source_filenames.append(filename)
 
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
@@ -94,8 +101,9 @@ class MSM(BaseEstimator, RegressorMixin):
                 contrast_image.add_gifti_data_array(contrast_data_array)
                 contrast_image.to_filename(filename)
 
+            # Write all target contrast maps
             for i, contrast in enumerate(target_data):
-                filename = str(Path(dir_name) / f"target_{i}.func.gii")
+                filename = str(Path(tmp_dir) / f"target_{i}.func.gii")
                 target_filenames.append(filename)
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
                     data=contrast,
@@ -111,83 +119,98 @@ class MSM(BaseEstimator, RegressorMixin):
                 contrast_image.add_gifti_data_array(contrast_data_array)
                 contrast_image.to_filename(filename)
 
-            transformed_mesh, transformed_func = run_msm(
-                in_data_list=source_filenames,
-                in_mesh=mesh_file,
-                ref_data_list=target_filenames,
+            # Run msm
+            transformed_mesh, _ = run_msm(
+                source_contrasts_list=source_filenames,
+                source_mesh=self.mesh_path,
+                target_contrasts_list=target_filenames,
                 debug=debug,
                 verbose=verbose,
-                output_dir=output_dir,
             )
 
-        self.transformed_mesh = transformed_mesh
-        self.transformed_mesh_path = (
-            Path(output_dir) / "transformed_in_mesh.surf.gii"
-        )
-        self.transformed_func = transformed_func
-        self.mesh_path = mesh_file
-
-        mesh_loaded = nib.load(mesh_file)
-        self.coordsys = mesh_loaded.darrays[0].coordsys
+            # Save computed transformation in model
+            self.transformed_mesh = transformed_mesh
 
         return self
 
     def predict(self, source_data):
         """
-        Map source contrast map onto target mesh.
+        Map source contrast maps onto target mesh.
 
         Parameters
         ----------
-        source_data: str
-            Path to source contrast map
+        source_data: ndarray(n_samples, n_features)
+            Contrast maps for source subject.
 
         Returns
         -------
-        transformed_contrast_map: ndarray(n)
+        predicted_contrast_maps: ndarray(n_samples, n_features)
             Contrast map transformed from source space to target space.
             n is the number of voxels of the target mesh
             use during the fitting phase
         """
+        predicted_contrast_maps = []
 
-        data_input = nib.load(source_data)
-        data_input.darrays = prepare_darrays(data_input.darrays, self.coordsys)
+        with TemporaryDirectory() as tmp_dir:
+            # Write transformed_mesh to gifti file
+            transformed_mesh_path = str(Path(tmp_dir) / "transformed_mesh.gii")
+            self.transformed_mesh.to_filename(transformed_mesh_path)
 
-        # Duplicate contrast map
-        # in order to cope with a bug of MSM
-        # (MSM doesn't accept 1-dimensional maps)
-        data_input.darrays.extend(
-            prepare_darrays(data_input.darrays, self.coordsys)
-        )
+            # Write each source contrast map to a gifti file
+            for i, contrast in enumerate(source_data):
+                source_contrast_filename = str(
+                    Path(tmp_dir) / f"source_{i}.func.gii"
+                )
 
-        with TemporaryDirectory(dir="./") as dir_name:
-            # Export generated map to temp file
-            # because MSM needs file paths
-            source_filename = str(Path(dir_name) / "input_test.func.gii")
-            data_input.to_filename(source_filename)
+                contrast_data_array = nib.gifti.gifti.GiftiDataArray(
+                    data=contrast,
+                    datatype=nib.nifti1.data_type_codes.code[
+                        "NIFTI_TYPE_FLOAT32"
+                    ],
+                    intent=nib.nifti1.intent_codes.code[
+                        "NIFTI_INTENT_POINTSET"
+                    ],
+                    coordsys=self.coordsys,
+                )
+                contrast_image = nib.gifti.gifti.GiftiImage()
+                # Duplicate contrast map
+                # in order to cope with a bug of MSM
+                # (MSM doesn't accept 1-dimensional maps)
+                contrast_image.add_gifti_data_array(contrast_data_array)
+                contrast_image.add_gifti_data_array(contrast_data_array)
+                contrast_image.to_filename(source_contrast_filename)
 
-            transformed_path = str(Path(dir_name) / "transformed_contrast")
+                predicted_contrast_path = str(
+                    Path(tmp_dir) / "predicted_contrast"
+                )
 
-            # Map source_data onto target mesh
-            cmd = " ".join(
-                [
-                    f"{FSL_PATH}/bin/msmresample",
-                    f"{self.transformed_mesh_path} ",
-                    transformed_path,
-                    f"-labels {source_filename} ",
-                    f"-project {self.mesh_path}",
-                ]
-            )
+                # Map source_data onto target mesh
+                cmd = " ".join(
+                    [
+                        f"{FSL_PATH}/bin/msmresample",
+                        f"{transformed_mesh_path}",
+                        predicted_contrast_path,
+                        f"-labels {source_contrast_filename}",
+                        f"-project {self.mesh_path}",
+                    ]
+                )
 
-            exit_code = os.system(cmd)
-            if exit_code != 0:
-                raise RuntimeError(f"Failed to run MSM with command:\n{cmd}")
+                exit_code = os.system(cmd)
+                if exit_code != 0:
+                    raise RuntimeError(
+                        f"Failed to run MSM with command:\n{cmd}"
+                    )
 
-            # Load saved contrast map
-            transformed_contrast_map = (
-                nib.load(f"{transformed_path}.func.gii").darrays[0].data
-            )
+                # Load predicted contrast map ndarray and append it
+                # to result list
+                predicted_contrast_map = (
+                    nib.load(f"{predicted_contrast_path}.func.gii")
+                    .darrays[0]
+                    .data
+                )
+                predicted_contrast_maps.append(predicted_contrast_map)
 
-            return transformed_contrast_map
+        return np.vstack(predicted_contrast_maps)
 
     def score(self, source_data, target_data):
         """
@@ -213,18 +236,18 @@ class MSM(BaseEstimator, RegressorMixin):
 
         return score
 
-    def load_model(self, model_filename, mesh):
+    def load_model(self, model_path, mesh_path):
         """
         Load fitted model from file
 
         Parameters
         ----------
-        model_filename: str
+        model_path: str
             Path to saved fitted model.
             After fitting the model is usually saved in
             Path(output_dir) / "transformed_in_mesh.surf.gii"
 
-        mesh: str
+        mesh_path: str
             Path to mesh used for source and target
 
         Returns
@@ -232,9 +255,9 @@ class MSM(BaseEstimator, RegressorMixin):
         self: object
             Loaded fitted alignment
         """
-        self.transformed_mesh_path = model_filename
-        self.mesh_path = mesh
+        self.transformed_mesh = nib.load(model_path)
+        self.mesh_path = mesh_path
+        mesh = nib.load(mesh_path)
+        self.coordsys = mesh.darrays[0].coordsys
 
-        mesh_loaded = nib.load(mesh)
-        self.coordsys = mesh_loaded.darrays[0].coordsys
         return self
