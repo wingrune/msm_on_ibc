@@ -22,7 +22,9 @@ load_dotenv(".env")
 FSL_PATH = os.getenv("FSL_PATH")
 FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
 
-print(FSL_PATH, FSL_CONFIG_PATH)
+print("MSM FSL config paths")
+print(f"FSL_PATH: {FSL_PATH}")
+print(f"FSL_CONFIG_PATH: {FSL_CONFIG_PATH}")
 
 
 def is_same_coordsys(c1, c2):
@@ -54,9 +56,10 @@ def run_msm(
     source_mesh,
     target_contrasts_list,
     target_mesh=None,
+    epsilon=None,
     debug=False,
     verbose=False,
-    fsl_config_path=FSL_CONFIG_PATH,
+    **kwargs,
 ):
     """Run MSM on a list of contrast between in data and ref data
 
@@ -71,15 +74,12 @@ def run_msm(
         target_contrasts_list live. The mesh should be given as a GIFTI file.
         Note that if target_mesh is not specified,
         the source_mesh will be used for all input data.
-    output_dir : str or Path
-        Directory in which to save the outputs. It will contain in GIFTI files
-        for the transformed data (in the target_mesh) and the transformed_mesh
-        in which the source_subject are aligned to target_subject.
+    epsilon: float or None
+        Regularization parameter
     debug : bool
         Flag to run quickly first level of the optimization.
     verbose : bool
         Whether the algorithm is verbose or not.
-
 
     Returns
     -------
@@ -102,6 +102,31 @@ def run_msm(
     contrasts_gifti_file = {}
 
     with TemporaryDirectory() as tmp_dir:
+        # Write temporary MSM config file, used to specify hyperparams
+        # Default config is taken from
+        # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/MSM/UserGuide
+        config_path = os.path.join(tmp_dir, "msm_config")
+
+        lines = "\n".join(
+            [
+                "--simval=1,2,2,2",
+                "--sigma_in=4,4,2,1",
+                "--sigma_ref=2,2,1,1",
+                f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
+                if epsilon is not None
+                else "--lambda=0,0.1,0.2,0.3",
+                "--it=50,3,3,3",
+                "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE",
+                "--CPgrid=0,2,3,4",
+                "--SGgrid=0,4,5,6",
+                "--datagrid=4,4,5,6",
+                "--IN",
+            ]
+        )
+
+        with open(config_path, "w") as f:
+            f.write(lines)
+
         # For source and target subjects (denoted as in and ref subjects
         # respectively in msm), create a gifti image with all their
         # contrast maps (denoted as "data" in msm).
@@ -136,7 +161,7 @@ def run_msm(
                 f"--refmesh={target_mesh}",
                 f"--indata={contrasts_gifti_file['source_subject']}",
                 f"--refdata={contrasts_gifti_file['target_subject']}",
-                # f"--conf={FSL_CONFIG_PATH}",
+                f"--conf={config_path}",
                 f"-o {tmp_dir}/",
                 "-f ASCII",
                 "--verbose" if verbose else "",

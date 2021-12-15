@@ -124,6 +124,7 @@ class MSM(BaseEstimator, RegressorMixin):
                 source_contrasts_list=source_filenames,
                 source_mesh=self.mesh_path,
                 target_contrasts_list=target_filenames,
+                epsilon=self.epsilon,
                 debug=debug,
                 verbose=verbose,
             )
