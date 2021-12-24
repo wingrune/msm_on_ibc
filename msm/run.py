@@ -109,18 +109,20 @@ def run_msm(
 
         lines = "\n".join(
             [
-                "--simval=1,2,2,2",
-                "--sigma_in=4,4,2,1",
-                "--sigma_ref=2,2,1,1",
+                "--simval=3,2,2,2",
+                "--sigma_in=0,0,0,0",
+                "--sigma_ref=0,0,0,0",
                 f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
                 if epsilon is not None
                 else "--lambda=0,0.1,0.2,0.3",
-                "--it=50,3,3,3",
+                "--it=50,10,15,15",
                 "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE",
-                "--CPgrid=0,2,3,4",
-                "--SGgrid=0,4,5,6",
-                "--datagrid=4,4,5,6",
-                "--IN",
+                "--CPgrid=6,2,3,4",
+                "--SGgrid=6,4,5,6",
+                "--datagrid=6,4,5,6",
+                "--regexp=2",
+                "--VN",
+                "--rescaleL"
             ]
         )
 
