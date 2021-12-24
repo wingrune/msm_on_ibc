@@ -89,7 +89,7 @@ target_test_data = "../data/bold_sub-07_ses-01_hcp_motor_tongue_lh.gii"
 
 # %% Transform source data
 print("Transforming contrast map...")
-transformed_map = msm.transform(source_test_data)
+transformed_map = msm.predict(source_test_data)
 
 # %% Load target map
 target_map = nib.load(target_test_data).darrays[0].data

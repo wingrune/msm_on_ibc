@@ -190,12 +190,28 @@ def run_msm(
                 f"Failed to convert ASCII output to GIFTI with comand:\n{cmd}"
             )
 
-        reprojected_dpv = Path(tmp_dir) / "transformed_and_reprojected.dpv"
+        # Create a transformed GIFTI image with all attributes 
+        # indentical to target GIFTI image.
+
+        # Transfomed and reprojected data are stored in temporary directory
+        # in dpv (data per voxel) format. 
+        reprojected_dpv = Path(tmp_dir) / "transformed_and_reprojected.dpv" 
         transformed_data = pd.read_csv(reprojected_dpv, sep=" ", header=None)
+        
+        # Data of interest (scalar data per voxel) are stored in 4th column
+        # of dataset (0 - voxel index; 1, 2, 3 - voxel coordinates)
         transformed_data = transformed_data[4].to_numpy()
 
+        # Use first image from target_contrasts_list as
+        # a template for the transformed GIFTI image
+        # Target data will be replaced by transformed data
         reprojected_contrasts = nib.load(target_contrasts_list[0])
-        reprojected_contrasts.darrays = reprojected_contrasts.darrays[:1]
+
+        # Assure data arrays to have one dimension as dpv is always
+        # one-dimensional
+        reprojected_contrasts.darrays = reprojected_contrasts.darrays[0]
+
+        # Replace target data by transformed data
         reprojected_contrasts.darrays[0].data = transformed_data
 
         mesh_gii = nib.load(mesh_gii_path)
