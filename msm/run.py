@@ -211,11 +211,11 @@ def run_msm(
 
         # Assure data arrays to have one dimension as dpv is always
         # one-dimensional
-        reprojected_contrasts.darrays = reprojected_contrasts.darrays[0]
+        # Use [:1] instead of [0] to preserve variable type (list)
+        reprojected_contrasts.darrays = reprojected_contrasts.darrays[:1]
 
         # Replace target data by transformed data
         reprojected_contrasts.darrays[0].data = transformed_data
-
         mesh_gii = nib.load(mesh_gii_path)
 
         return mesh_gii, reprojected_contrasts

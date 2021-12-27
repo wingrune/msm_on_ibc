@@ -60,18 +60,17 @@ target_array = np.stack(
     axis=0,
 )
 
-print(source_array.shape)
-print(target_array.shape)
-msm.fit(
-    source_array,
-    target_array,
-    # mesh_file="/storage/store2/work/athual/fsaverage/lh.sphere.gii",
-    # output_dir="/storage/store2/work/athual/outputs/"
-    # "_051_alignment_method_comparison",
-    mesh_file="../data/lh.sphere.gii",
-    output_dir="../outputs/" "_051_alignment_method_comparison",
-)
+# msm.fit(
+#     source_array,
+#     target_array,
+#     # mesh_file="/storage/store2/work/athual/fsaverage/lh.sphere.gii",
+#     # output_dir="/storage/store2/work/athual/outputs/"
+#     # "_051_alignment_method_comparison",
+#      mesh_file="../data/lh.sphere.gii",
+#      output_dir="../outputs/" "_051_alignment_method_comparison",
+# )
 
+msm.load_model(model_path="../outputs/_051_alignment_method_comparison/transformed_in_mesh.surf.gii", mesh_path="../data/lh.sphere.gii")
 # %% Evaluate model
 
 # Define data used for test
@@ -87,12 +86,16 @@ target_test_data = "../data/bold_sub-07_ses-01_hcp_motor_tongue_lh.gii"
 #     "ses-01/res_fsaverage5_hcp_motor_ffx/stat_surf/tongue_lh.gii"
 # )
 
+# %% Load source map
+source_map = nib.load(source_test_data).darrays[0].data
+
 # %% Transform source data
 print("Transforming contrast map...")
-transformed_map = msm.predict(source_test_data)
+transformed_map = msm.predict(source_map)
 
 # %% Load target map
 target_map = nib.load(target_test_data).darrays[0].data
 
-# %% Compute R2 score
-print(msm.score(source_test_data, target_map))
+# %% Compute R2 score before and after transformation
+print(f"R2 score before transformation: {msm.score(source_map, target_map)}")
+print(f"R2 score after transformation: {msm.score(transformed_map, target_map)}")

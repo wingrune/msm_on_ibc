@@ -152,6 +152,10 @@ class MSM(BaseEstimator, RegressorMixin):
         """
         predicted_contrast_maps = []
 
+        # Assure source_data to be 2-dimensional
+        if source_data.ndim == 1:
+            source_data = np.array([source_data])
+
         with TemporaryDirectory() as tmp_dir:
             # Write transformed_mesh to gifti file
             transformed_mesh_path = str(Path(tmp_dir) / "transformed_mesh.gii")
@@ -173,6 +177,7 @@ class MSM(BaseEstimator, RegressorMixin):
                     ],
                     coordsys=self.coordsys,
                 )
+
                 contrast_image = nib.gifti.gifti.GiftiImage()
                 # Duplicate contrast map
                 # in order to cope with a bug of MSM
