@@ -70,7 +70,10 @@ target_array = np.stack(
 #      output_dir="../outputs/" "_051_alignment_method_comparison",
 # )
 
-msm.load_model(model_path="../outputs/_051_alignment_method_comparison/transformed_in_mesh.surf.gii", mesh_path="../data/lh.sphere.gii")
+msm.load_model(
+    model_path="../outputs/_051_alignment_method_comparison/transformed_in_mesh.surf.gii",
+    mesh_path="../data/lh.sphere.gii"
+)
 # %% Evaluate model
 
 # Define data used for test
