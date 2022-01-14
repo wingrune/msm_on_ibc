@@ -14,7 +14,7 @@ sys.path.append("/mnt/e/Ecole Polytechnique/Parietal/code/msm_on_ibc")
 from msm import model  # noqa: E402
 
 dotenv.load_dotenv()
-FSL_PATH = os.getenv("FSL_PATH")
+FSLDIR = os.getenv("FSLDIR")
 
 
 # Load spherical mesh produced with `mris_convert`

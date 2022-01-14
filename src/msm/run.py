@@ -19,11 +19,11 @@ elif ENV == "development":
     load_dotenv(".env.development")
 load_dotenv(".env")
 
-FSL_PATH = os.getenv("FSL_PATH")
+FSLDIR = os.getenv("FSLDIR")
 FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
 
 print("MSM FSL config paths")
-print(f"FSL_PATH: {FSL_PATH}")
+print(f"FSLDIR: {FSLDIR}")
 print(f"FSL_CONFIG_PATH: {FSL_CONFIG_PATH}")
 
 
@@ -158,7 +158,7 @@ def run_msm(
 
         cmd = " ".join(
             [
-                f"{FSL_PATH}/bin/msm",
+                f"{FSLDIR}/bin/msm",
                 f"--inmesh={source_mesh}",
                 f"--refmesh={target_mesh}",
                 f"--indata={contrasts_gifti_file['source_subject']}",

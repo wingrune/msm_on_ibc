@@ -7,12 +7,12 @@ import sys
 
 # Define env variables manually since they won't be
 # picked up from the env file
-# os.environ["FSL_PATH"] = "/usr/local/fsl"
+# os.environ["FSLDIR"] = "/usr/local/fsl"
 # os.environ[
 #     "FSL_CONFIG_PATH"
 # ] = "/usr/local/fsl/config/basic_configs/config_standard_MSM_strain"
 
-os.environ["FSL_PATH"] = "/mnt/e/usr/local/fsl"
+os.environ["FSLDIR"] = "/mnt/e/usr/local/fsl"
 os.environ[
     "FSL_CONFIG_PATH"
 ] = "/mnt/e/usr/local/fsl/config/basic_configs/config_standard_MSM_strain"

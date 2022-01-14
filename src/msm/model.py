@@ -20,7 +20,7 @@ elif ENV == "development":
     load_dotenv(".env.development")
 load_dotenv(".env")
 
-FSL_PATH = os.getenv("FSL_PATH")
+FSLDIR = os.getenv("FSLDIR")
 # FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
 
 fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
@@ -193,7 +193,7 @@ class MSM(BaseEstimator, RegressorMixin):
                 # Map source_data onto target mesh
                 cmd = " ".join(
                     [
-                        f"{FSL_PATH}/bin/msmresample",
+                        f"{FSLDIR}/bin/msmresample",
                         f"{transformed_mesh_path}",
                         predicted_contrast_path,
                         f"-labels {source_contrast_filename}",
