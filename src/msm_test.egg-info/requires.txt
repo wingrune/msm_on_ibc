@@ -1,9 +1,0 @@
-numpy
-nibabel
-os
-sys
-dotenv
-pathlib
-pandas
-nilearn
-sklearn
