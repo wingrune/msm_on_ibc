@@ -16,3 +16,5 @@ logdir*
 outputs
 test
 dist
+
+*.egg-info
