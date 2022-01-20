@@ -159,7 +159,7 @@ def run_msm(
         # Run MSM
         cmd = " ".join(
             [
-                f"{FSLDIR}/bin/msm",
+                os.path.join(FSLDIR, "bin/msm"),
                 f"--inmesh={source_mesh}",
                 f"--refmesh={target_mesh}",
                 f"--indata={contrasts_gifti_file['source_subject']}",

@@ -44,6 +44,8 @@ class MSM(BaseEstimator, TransformerMixin):
         ----------
         source_data: ndarray(n_samples, n_features)
             Contrast maps for source subject.
+            In our neuroscience context, n_samples would be the number
+            of conditions, and n_features the number of voxels.
         target_data: ndarray(n_samples, n_features)
             Contrast maps for target subject.
             Length should match that of source_data
@@ -182,7 +184,7 @@ class MSM(BaseEstimator, TransformerMixin):
                 # Map source_data onto target mesh
                 cmd = " ".join(
                     [
-                        f"{FSLDIR}/bin/msmresample",
+                        os.path.join(FSLDIR, "bin/msmresample"),
                         f"{transformed_mesh_path}",
                         predicted_contrast_path,
                         f"-labels {source_contrast_filename}",
