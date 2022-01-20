@@ -2,4 +2,5 @@ nibabel
 nilearn
 numpy
 pandas
+pytest
 scikit_learn

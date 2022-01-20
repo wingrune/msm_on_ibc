@@ -20,15 +20,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        'numpy',
-        'nibabel',
-        'python-dotenv',
-        'pathlib',
-        'pandas',
-        'nilearn',
-        'sklearn'
-    ],
+    install_requires=["nibabel", "nilearn", "numpy", "pandas", "sklearn"],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
