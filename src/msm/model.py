@@ -62,7 +62,7 @@ class MSM(BaseEstimator, TransformerMixin):
             target_filenames = []
 
             self.mesh_path = mesh_file
-            mesh = nib.load(self.mesh_path)
+            mesh = utils.gifti_from_file(self.mesh_path)
             coordsys = mesh.darrays[0].coordsys
             self.coordsys = coordsys
 
@@ -252,7 +252,7 @@ class MSM(BaseEstimator, TransformerMixin):
         """
         self.transformed_mesh = nib.load(model_path)
         self.mesh_path = mesh_path
-        mesh = nib.load(mesh_path)
+        mesh = utils.gifti_from_file(self.mesh_path)
         self.coordsys = mesh.darrays[0].coordsys
 
         return self

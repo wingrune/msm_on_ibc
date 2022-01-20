@@ -122,7 +122,7 @@ def run_msm(
         for subject, (contrast_paths, mesh_path) in contrasts_to_load.items():
             # Load the coordsys from the mesh associated to the data
             # in order to make sure it is well specified
-            mesh = nib.load(mesh_path)
+            mesh = utils.gifti_from_file(mesh_path)
             mesh_coordsys = mesh.darrays[0].coordsys
             contrast_maps = nib.load(contrast_paths[0])
             contrast_maps.darrays = prepare_darrays(
@@ -141,6 +141,22 @@ def run_msm(
             contrast_maps.to_filename(filename)
             contrasts_gifti_file[subject] = filename
 
+        # If input meshes are compressed, decompress them
+        # in temporary files and update mesh path
+        if source_mesh.endswith(".gz"):
+            tmp_source_mesh = os.path.join(
+                tmp_dir, os.path.basename(source_mesh[:-3])
+            )
+            utils.ungzip(source_mesh, tmp_source_mesh)
+            source_mesh = tmp_source_mesh
+        if target_mesh.endswith(".gz"):
+            tmp_target_mesh = os.path.join(
+                tmp_dir, os.path.basename(target_mesh[:-3])
+            )
+            utils.ungzip(target_mesh, tmp_target_mesh)
+            target_mesh = tmp_target_mesh
+
+        # Run MSM
         cmd = " ".join(
             [
                 f"{FSLDIR}/bin/msm",
