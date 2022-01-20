@@ -107,7 +107,7 @@ def run_msm(
                 "--datagrid=6,4,5,6",
                 "--regexp=2",
                 "--VN",
-                "--rescaleL"
+                "--rescaleL",
             ]
         )
 
@@ -193,14 +193,14 @@ def run_msm(
                 f"Failed to convert ASCII output to GIFTI with comand:\n{cmd}"
             )
 
-        # Create a transformed GIFTI image with all attributes 
+        # Create a transformed GIFTI image with all attributes
         # indentical to target GIFTI image.
 
         # Transfomed and reprojected data are stored in temporary directory
-        # in dpv (data per voxel) format. 
-        reprojected_dpv = Path(tmp_dir) / "transformed_and_reprojected.dpv" 
+        # in dpv (data per voxel) format.
+        reprojected_dpv = Path(tmp_dir) / "transformed_and_reprojected.dpv"
         transformed_data = pd.read_csv(reprojected_dpv, sep=" ", header=None)
-        
+
         # Data of interest (scalar data per voxel) are stored in 4th column
         # of dataset (0 - voxel index; 1, 2, 3 - voxel coordinates)
         transformed_data = transformed_data[4].to_numpy()
