@@ -238,7 +238,7 @@ class MSM(BaseEstimator, TransformerMixin):
             self.transform(source_data) with target_data
         """
 
-        transformed_data = self.predict(source_data)
+        transformed_data = self.transform(source_data)
         score = r2_score(transformed_data.T, target_data.T)
 
         return score
