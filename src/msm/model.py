@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
 import numpy as np
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import r2_score
 import os
 from pathlib import Path
@@ -26,7 +26,7 @@ FSLDIR = os.getenv("FSLDIR")
 fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
 
 
-class MSM(BaseEstimator, RegressorMixin):
+class MSM(BaseEstimator, TransformerMixin):
     def __init__(self, epsilon=0.1, **kwargs):
         """
         Initialize MSM object.
@@ -134,7 +134,7 @@ class MSM(BaseEstimator, RegressorMixin):
 
         return self
 
-    def predict(self, source_data):
+    def transform(self, source_data):
         """
         Map source contrast maps onto target mesh.
 
