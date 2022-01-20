@@ -7,7 +7,7 @@ from scipy import stats
 
 import nibabel as nib
 import matplotlib.pyplot as plt
-from run import run_msm, prepare_darrays
+from msm.run import run_msm, prepare_darrays
 
 dotenv.load_dotenv()
 FSL_PATH = os.getenv("FSL_PATH")

@@ -1,4 +1,3 @@
-import dotenv
 import os
 import json
 import sys
@@ -12,9 +11,9 @@ import random
 sys.path.append("/mnt/e/Ecole Polytechnique/Parietal/code/msm_on_ibc")
 
 from msm import model  # noqa: E402
+from msm import utils  # noqa: E402
 
-dotenv.load_dotenv()
-FSLDIR = os.getenv("FSLDIR")
+FSLDIR, _ = utils.check_fsl()
 
 
 # Load spherical mesh produced with `mris_convert`

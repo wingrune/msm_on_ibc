@@ -1,6 +1,6 @@
 from nilearn import plotting
 
-from run import run_msm
+from msm.run import run_msm
 
 # Load spherical mesh produced with `mris_convert`
 spherical_mesh = "./data/lh.sphere.gii"
