@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import nibabel as nib
 from nilearn import datasets
 import numpy as np
@@ -9,19 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from msm.run import run_msm
-
-ENV = os.getenv("ENV")
-
-if ENV == "production":
-    load_dotenv(".env.production")
-elif ENV == "staging":
-    load_dotenv(".env.staging")
-elif ENV == "development":
-    load_dotenv(".env.development")
-load_dotenv(".env")
-
-FSLDIR = os.getenv("FSLDIR")
-# FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
+from msm import utils
 
 fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
 
@@ -150,6 +137,8 @@ class MSM(BaseEstimator, TransformerMixin):
             n is the number of voxels of the target mesh
             use during the fitting phase
         """
+        FSLDIR, _ = utils.check_fsl()
+
         predicted_contrast_maps = []
 
         # Assure source_data to be 2-dimensional

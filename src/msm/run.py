@@ -1,30 +1,11 @@
-from dotenv import load_dotenv
+import nibabel as nib
+import numpy as np
 import os
+import pandas as pd
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import numpy as np
-import pandas as pd
-
-import nibabel as nib
-
-# Load environment variables
-ENV = os.getenv("ENV")
-
-if ENV == "production":
-    load_dotenv(".env.production")
-elif ENV == "staging":
-    load_dotenv(".env.staging")
-elif ENV == "development":
-    load_dotenv(".env.development")
-load_dotenv(".env")
-
-FSLDIR = os.getenv("FSLDIR")
-FSL_CONFIG_PATH = os.getenv("FSL_CONFIG_PATH")
-
-print("MSM FSL config paths")
-print(f"FSLDIR: {FSLDIR}")
-print(f"FSL_CONFIG_PATH: {FSL_CONFIG_PATH}")
+from msm import utils
 
 
 def is_same_coordsys(c1, c2):
@@ -88,6 +69,10 @@ def run_msm(
     transformed_gii : nibabel.gifti.GiftiImage
         Image holding the transformed data in the target_mesh.
     """
+    FSLDIR, FSL_CONFIG_PATH = utils.check_fsl()
+    if verbose:
+        print(f"FSLDIR: {FSLDIR}")
+        print(f"FSL_CONFIG_PATH: {FSL_CONFIG_PATH}")
 
     if target_mesh is None:
         target_mesh = source_mesh
