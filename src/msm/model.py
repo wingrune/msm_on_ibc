@@ -181,6 +181,16 @@ class MSM(BaseEstimator, TransformerMixin):
                     Path(tmp_dir) / "predicted_contrast"
                 )
 
+                # If input mesh is compressed, decompress it
+                # in temporary files and update mesh path
+                mesh_path = self.mesh_path
+                if mesh_path.endswith(".gz"):
+                    tmp_mesh_path = os.path.join(
+                        tmp_dir, os.path.basename(mesh_path[:-3])
+                    )
+                    utils.ungzip(mesh_path, tmp_mesh_path)
+                    mesh_path = tmp_mesh_path
+
                 # Map source_data onto target mesh
                 cmd = " ".join(
                     [
@@ -188,7 +198,7 @@ class MSM(BaseEstimator, TransformerMixin):
                         f"{transformed_mesh_path}",
                         predicted_contrast_path,
                         f"-labels {source_contrast_filename}",
-                        f"-project {self.mesh_path}",
+                        f"-project {mesh_path}",
                     ]
                 )
 
