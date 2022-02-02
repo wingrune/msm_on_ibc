@@ -1,5 +1,4 @@
 nibabel
-nilearn
 numpy
 pandas
 scikit_learn

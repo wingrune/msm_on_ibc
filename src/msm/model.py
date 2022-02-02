@@ -1,5 +1,4 @@
 import nibabel as nib
-from nilearn import datasets
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import r2_score
@@ -9,8 +8,6 @@ from tempfile import TemporaryDirectory
 
 from msm.run import run_msm
 from msm import utils
-
-fsaverage5 = datasets.fetch_surf_fsaverage(mesh="fsaverage5")
 
 
 class MSM(BaseEstimator, TransformerMixin):
@@ -32,7 +29,7 @@ class MSM(BaseEstimator, TransformerMixin):
         self,
         source_data,
         target_data,
-        mesh_file=fsaverage5.sphere_left,
+        mesh_file=None,
         verbose=False,
         debug=False,
         **kwargs,
