@@ -60,10 +60,12 @@ class MSM(BaseEstimator, TransformerMixin):
             source_filenames = []
             target_filenames = []
 
-            self.mesh_path = mesh_file
-            mesh = utils.gifti_from_file(self.mesh_path)
-            coordsys = mesh.darrays[0].coordsys
-            self.coordsys = coordsys
+            # Save mesh as nifti image
+            # (this is needed because transform calls msm resampling
+            # which requires the mesh, but transform can be called on
+            # a different machine than fit if the model is saved and loaded)
+            self.mesh = utils.gifti_from_file(mesh_file)
+            coordsys = self.mesh.darrays[0].coordsys
 
             # All inputed contrast maps need to be written
             # as gifti files in order to be used with MSM
@@ -165,7 +167,7 @@ class MSM(BaseEstimator, TransformerMixin):
                     intent=nib.nifti1.intent_codes.code[
                         "NIFTI_INTENT_POINTSET"
                     ],
-                    coordsys=self.coordsys,
+                    coordsys=self.mesh.darrays[0].coordsys,
                 )
 
                 contrast_image = nib.gifti.gifti.GiftiImage()
@@ -180,15 +182,9 @@ class MSM(BaseEstimator, TransformerMixin):
                     Path(tmp_dir) / "predicted_contrast"
                 )
 
-                # If input mesh is compressed, decompress it
-                # in temporary files and update mesh path
-                mesh_path = self.mesh_path
-                if mesh_path.endswith(".gz"):
-                    tmp_mesh_path = os.path.join(
-                        tmp_dir, os.path.basename(mesh_path[:-3])
-                    )
-                    utils.ungzip(mesh_path, tmp_mesh_path)
-                    mesh_path = tmp_mesh_path
+                # Create temporary file containing mesh
+                mesh_path = str(Path(tmp_dir) / "mesh.gii")
+                self.mesh.to_filename(mesh_path)
 
                 # Map source_data onto target mesh
                 cmd = " ".join(
@@ -268,8 +264,6 @@ class MSM(BaseEstimator, TransformerMixin):
             Loaded fitted alignment
         """
         self.transformed_mesh = nib.load(model_path)
-        self.mesh_path = mesh_path
-        mesh = utils.gifti_from_file(self.mesh_path)
-        self.coordsys = mesh.darrays[0].coordsys
+        self.mesh = utils.gifti_from_file(self.mesh_path)
 
         return self
