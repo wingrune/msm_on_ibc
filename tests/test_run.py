@@ -14,8 +14,8 @@ def test_run():
 
     with TemporaryDirectory() as tmp_dir:
         # Load fsaverage mesh
-        fs5 = datasets.fetch_surf_fsaverage(mesh="fsaverage3")
-        mesh_path = fs5.sphere_left
+        fs3 = datasets.fetch_surf_fsaverage(mesh="fsaverage3")
+        mesh_path = fs3.sphere_left
         tmp_mesh_path = os.path.join(tmp_dir, os.path.basename(mesh_path[:-3]))
         # Ungzip mesh to new file
         utils.ungzip(mesh_path, tmp_mesh_path)
