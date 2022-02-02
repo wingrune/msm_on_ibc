@@ -38,6 +38,7 @@ def run_msm(
     target_contrasts_list,
     target_mesh=None,
     epsilon=None,
+    iterations=None,
     debug=False,
     verbose=False,
     **kwargs,
@@ -57,6 +58,9 @@ def run_msm(
         the source_mesh will be used for all input data.
     epsilon: float or None
         Regularization parameter
+    iterations: int or str or None
+        Number of iterations
+        examples: 5 or "5,2,3,4"
     debug : bool
         Flag to run quickly first level of the optimization.
     verbose : bool
@@ -92,19 +96,30 @@ def run_msm(
         # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/MSM/UserGuide
         config_path = os.path.join(tmp_dir, "msm_config")
 
+        iteration_line = "--it=50,3,3,3"
+        if iterations is not None:
+            if isinstance(iterations, int):
+                it = str(iterations)
+                iteration_line = f"--it={it},{it},{it},{it}"
+            elif isinstance(iterations, str):
+                iteration_line = f"--it={iterations}"
+
+        lambda_line = "--lambda=0,0.1,0.2,0.3"
+        if epsilon is not None:
+            lambda_line = f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
+
         lines = "\n".join(
             [
                 "--simval=3,2,2,2",
                 "--sigma_in=0,0,0,0",
                 "--sigma_ref=0,0,0,0",
-                f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
-                if epsilon is not None
-                else "--lambda=0,0.1,0.2,0.3",
-                "--it=50,10,15,15",
+                lambda_line,
+                iteration_line,
                 "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE",
                 "--CPgrid=6,2,3,4",
                 "--SGgrid=6,4,5,6",
                 "--datagrid=6,4,5,6",
+                # "--regoption=1", # use the 2014 or 2018 version
                 "--regexp=2",
                 "--VN",
                 "--rescaleL",
