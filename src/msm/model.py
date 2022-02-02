@@ -141,7 +141,9 @@ class MSM(BaseEstimator, TransformerMixin):
         predicted_contrast_maps = []
 
         # Assure source_data to be 2-dimensional
+        one_dimensional = False
         if source_data.ndim == 1:
+            one_dimensional = True
             source_data = np.array([source_data])
 
         with TemporaryDirectory() as tmp_dir:
@@ -214,7 +216,13 @@ class MSM(BaseEstimator, TransformerMixin):
                 )
                 predicted_contrast_maps.append(predicted_contrast_map)
 
-        return np.vstack(predicted_contrast_maps)
+        predicted_data = np.vstack(predicted_contrast_maps)
+
+        # If source data is 1-dim, return 1-dim array
+        if one_dimensional:
+            return predicted_data.flatten()
+        else:
+            return predicted_data
 
     def score(self, source_data, target_data):
         """

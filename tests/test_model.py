@@ -39,6 +39,11 @@ def test_align_random_data():
     s = m.score(source_test_data, predicted_data)
     assert isinstance(s, int) or isinstance(s, float)
 
+    # transform single contrast map
+    source_test_data = np.ones(n_voxels)
+    predicted_data = m.transform(source_test_data)
+    assert source_test_data.shape == predicted_data.shape
+
 
 # def test_model_is_sklearn_estimator():
 #     """Model should have sklearn compatible API"""
