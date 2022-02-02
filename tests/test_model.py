@@ -24,8 +24,8 @@ def test_align_random_data():
     # generate random maps
     fs3 = datasets.fetch_surf_fsaverage(mesh="fsaverage3")
     n_voxels = 642
-    source_train_data = np.random.rand(2, n_voxels)
-    target_train_data = np.random.rand(2, n_voxels)
+    source_train_data = np.ones((2, n_voxels))
+    target_train_data = np.ones((2, n_voxels))
 
     # align maps
     m.fit(source_train_data, target_train_data, mesh_file=fs3.sphere_left)

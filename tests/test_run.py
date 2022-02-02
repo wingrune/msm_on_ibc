@@ -32,9 +32,7 @@ def test_run():
         ]
         for source_contrast in source_contrasts_list:
             img = GiftiImage()
-            data = GiftiDataArray(
-                np.random.rand(n_voxels), coordsys=mesh_coordsys
-            )
+            data = GiftiDataArray(np.ones(n_voxels), coordsys=mesh_coordsys)
             img.add_gifti_data_array(data)
             img.add_gifti_data_array(data)
             nib.save(img, source_contrast)
@@ -45,9 +43,7 @@ def test_run():
         ]
         for target_contrast in target_contrasts_list:
             img = GiftiImage()
-            data = GiftiDataArray(
-                np.random.rand(n_voxels), coordsys=mesh_coordsys
-            )
+            data = GiftiDataArray(np.ones(n_voxels), coordsys=mesh_coordsys)
             img.add_gifti_data_array(data)
             img.add_gifti_data_array(data)
             nib.save(img, target_contrast)
