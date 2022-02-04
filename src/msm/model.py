@@ -110,7 +110,7 @@ class MSM(BaseEstimator, TransformerMixin):
             # Run msm
             transformed_mesh, _ = run_msm(
                 source_contrasts_list=source_filenames,
-                source_mesh=self.mesh_path,
+                source_mesh=mesh_file,
                 target_contrasts_list=target_filenames,
                 epsilon=self.epsilon,
                 debug=debug,
@@ -264,6 +264,6 @@ class MSM(BaseEstimator, TransformerMixin):
             Loaded fitted alignment
         """
         self.transformed_mesh = nib.load(model_path)
-        self.mesh = utils.gifti_from_file(self.mesh_path)
+        self.mesh = utils.gifti_from_file(mesh_path)
 
         return self
