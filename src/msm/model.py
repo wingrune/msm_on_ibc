@@ -2,7 +2,7 @@ import nibabel as nib
 from nilearn import datasets
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.stats import pearsonr
+from scipy.stats import pearsonr
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
