@@ -2,7 +2,7 @@ import nibabel as nib
 from nilearn import datasets
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.metrics import r2_score
+from sklearn.stats import pearsonr
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -222,7 +222,8 @@ class MSM(BaseEstimator, TransformerMixin):
     def score(self, source_data, target_data):
         """
         Transform source contrast maps using fitted MSM
-        and compute cosine distance with actual target constrast maps.
+        and compute a Pearson correlation coefficient with
+        actual target constrast maps.
 
         Parameters
         ----------
@@ -234,12 +235,12 @@ class MSM(BaseEstimator, TransformerMixin):
         Returns
         -------
         score: float
-            cosine distance between
+            Pearson correlation coefficient between
             self.transform(source_data) with target_data
         """
 
         transformed_data = self.transform(source_data)
-        score = r2_score(transformed_data.T, target_data.T)
+        score = pearsonr(transformed_data.T, target_data.T)[0]
 
         return score
 
