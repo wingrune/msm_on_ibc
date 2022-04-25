@@ -189,11 +189,13 @@ def run_msm(
         )
 
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
         with process.stdout:
             utils.log_subprocess_output(process.stdout)
+        with process.stderr:
+            utils.log_subprocess_output(process.stderr, err=True)
 
         exit_code = process.wait()
 
@@ -216,11 +218,15 @@ def run_msm(
         )
 
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
 
         with process.stdout:
             utils.log_subprocess_output(process.stdout)
+        with process.stderr:
+            utils.log_subprocess_output(process.stderr, err=True)
 
         exit_code = process.wait()
         if exit_code != 0:
