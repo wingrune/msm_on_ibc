@@ -4,6 +4,8 @@ import numpy as np
 import os
 import pandas as pd
 from pathlib import Path
+import shlex
+import subprocess
 from tempfile import TemporaryDirectory
 
 from msm import utils
@@ -95,14 +97,15 @@ def run_msm(
         if iterations is not None:
             if isinstance(iterations, int):
                 it = str(iterations)
-                iteration_line = f"--it={it},{it},{it},{it}"
+                iteration_line = f"--it={it},{it},{it},{it},{it}"
             elif isinstance(iterations, str):
                 iteration_line = f"--it={iterations}"
 
         lambda_line = "--lambda=0,0.1,0.2,0.3,0.4"
         if epsilon is not None:
-            lambda_line = \
+            lambda_line = (
                 f"--lambda={epsilon},{epsilon},{epsilon},{epsilon},{epsilon}"
+            )
 
         lines = "\n".join(
             [
@@ -168,40 +171,61 @@ def run_msm(
             target_mesh = tmp_target_mesh
 
         # Run MSM
-        cmd = " ".join(
-            [
-                os.path.join(FSLDIR, "bin/msm"),
-                f"--inmesh={source_mesh}",
-                f"--refmesh={target_mesh}",
-                f"--indata={contrasts_gifti_file['source_subject']}",
-                f"--refdata={contrasts_gifti_file['target_subject']}",
-                f"--conf={config_path}",
-                f"-o {tmp_dir}/",
-                "-f ASCII",
-                "--verbose" if verbose else "",
-                "--debug --levels=1" if debug else "",
-            ]
+        cmd = shlex.split(
+            " ".join(
+                [
+                    os.path.join(FSLDIR, "bin/msm"),
+                    f"--inmesh={source_mesh}",
+                    f"--refmesh={target_mesh}",
+                    f"--indata={contrasts_gifti_file['source_subject']}",
+                    f"--refdata={contrasts_gifti_file['target_subject']}",
+                    f"--conf={config_path}",
+                    f"-o {tmp_dir}/",
+                    "-f ASCII",
+                    "--verbose",
+                    "--debug --levels=1",
+                ]
+            )
         )
 
-        exit_code = os.system(cmd)
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+
+        with process.stdout:
+            utils.log_subprocess_output(process.stdout)
+
+        exit_code = process.wait()
+
         if exit_code != 0:
-            raise RuntimeError(f"Failed to run MSM with command:\n{cmd}")
+            raise RuntimeError(f"Failed to run msm with command:\n{cmd}")
 
         mesh_ascii_path = Path(tmp_dir) / "sphere.reg.asc"
         mesh_gii_path = Path(tmp_dir) / "transformed_in_mesh.surf.gii"
 
-        cmd = " ".join(
-            [
-                "surf2surf",
-                f"-i {mesh_ascii_path}",
-                f"-o {mesh_gii_path}",
-                "--outputtype=GIFTI_BIN_GZ",
-            ]
+        # Convert ascii output to gitfi data
+        cmd = shlex.split(
+            " ".join(
+                [
+                    os.path.join(FSLDIR, "bin/surf2surf"),
+                    f"-i {mesh_ascii_path}",
+                    f"-o {mesh_gii_path}",
+                    "--outputtype=GIFTI_BIN_GZ",
+                ]
+            )
         )
-        exit_code = os.system(cmd)
+
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+
+        with process.stdout:
+            utils.log_subprocess_output(process.stdout)
+
+        exit_code = process.wait()
         if exit_code != 0:
             raise RuntimeError(
-                f"Failed to convert ASCII output to GIFTI with comand:\n{cmd}"
+                f"Failed to convert ASCII output to GIFTI with command:\n{cmd}"
             )
 
         # Create a transformed GIFTI image with all attributes

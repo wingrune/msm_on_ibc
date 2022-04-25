@@ -5,6 +5,8 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from scipy.stats import pearsonr
 import os
 from pathlib import Path
+import shlex
+import subprocess
 from tempfile import TemporaryDirectory
 
 from msm.run import run_msm
@@ -18,7 +20,7 @@ class MSM(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        epsilon: scalar
+        epsilon: scalar,
             Regularization parameter used in MSM.
             In the MSM documentation, the parameter is often denoted
             as lambda
@@ -192,20 +194,30 @@ class MSM(BaseEstimator, TransformerMixin):
                 self.mesh.to_filename(mesh_path)
 
                 # Map source_data onto target mesh
-                cmd = " ".join(
-                    [
-                        os.path.join(FSLDIR, "bin/msmresample"),
-                        f"{transformed_mesh_path}",
-                        predicted_contrast_path,
-                        f"-labels {source_contrast_filename}",
-                        f"-project {mesh_path}",
-                    ]
+                cmd = shlex.split(
+                    " ".join(
+                        [
+                            os.path.join(FSLDIR, "bin/msmresample"),
+                            f"{transformed_mesh_path}",
+                            predicted_contrast_path,
+                            f"-labels {source_contrast_filename}",
+                            f"-project {mesh_path}",
+                        ]
+                    )
                 )
 
-                exit_code = os.system(cmd)
+                process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+                )
+
+                with process.stdout:
+                    utils.log_subprocess_output(process.stdout)
+
+                exit_code = process.wait()
+
                 if exit_code != 0:
                     raise RuntimeError(
-                        f"Failed to run MSM with command:\n{cmd}"
+                        f"Failed to run msmresample with command:\n{cmd}"
                     )
 
                 # Load predicted contrast map ndarray and append it
