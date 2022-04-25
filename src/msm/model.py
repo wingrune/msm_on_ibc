@@ -160,6 +160,10 @@ class MSM(BaseEstimator, TransformerMixin):
             transformed_mesh_path = str(Path(tmp_dir) / "transformed_mesh.gii")
             self.transformed_mesh.to_filename(transformed_mesh_path)
 
+            # Create temporary gifti file containing mesh
+            mesh_path = str(Path(tmp_dir) / "mesh.gii")
+            self.mesh.to_filename(mesh_path)
+
             # Write each source contrast map to a gifti file
             for i, contrast in enumerate(source_data):
                 source_contrast_filename = str(
@@ -188,10 +192,6 @@ class MSM(BaseEstimator, TransformerMixin):
                 predicted_contrast_path = str(
                     Path(tmp_dir) / "predicted_contrast"
                 )
-
-                # Create temporary file containing mesh
-                mesh_path = str(Path(tmp_dir) / "mesh.gii")
-                self.mesh.to_filename(mesh_path)
 
                 # Map source_data onto target mesh
                 cmd = shlex.split(
