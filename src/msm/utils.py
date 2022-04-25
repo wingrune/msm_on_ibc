@@ -10,9 +10,9 @@ def log_subprocess_output(pipe, err=False):
     logging.getLogger("msm")
     for line in iter(pipe.readline, b""):
         if err:
-            logging.warning(line.decode("utf-8"))
+            logging.warning(line.decode("utf-8").strip())
         else:
-            logging.info(line.decode("utf-8"))
+            logging.info(line.decode("utf-8").strip())
 
 
 def check_fsl():
