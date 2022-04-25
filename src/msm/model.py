@@ -215,6 +215,9 @@ class MSM(BaseEstimator, TransformerMixin):
                     .darrays[0]
                     .data
                 )
+                predicted_contrast_map = predicted_contrast_map.astype(
+                    source_data.dtype
+                )
                 predicted_contrast_maps.append(predicted_contrast_map)
 
         predicted_data = np.vstack(predicted_contrast_maps)
