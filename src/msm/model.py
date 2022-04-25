@@ -241,7 +241,12 @@ class MSM(BaseEstimator, TransformerMixin):
         """
 
         transformed_data = self.transform(source_data)
-        score = pearsonr(transformed_data.T, target_data.T)[0]
+        score = np.mean(
+            [
+                pearsonr(transformed_data[i, :], target_data[i, :])[0]
+                for i in range(transformed_data.shape[0])
+            ]
+        )
 
         return score
 
