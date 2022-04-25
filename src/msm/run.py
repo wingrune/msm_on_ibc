@@ -1,3 +1,4 @@
+import logging
 import nibabel as nib
 import numpy as np
 import os
@@ -39,8 +40,6 @@ def run_msm(
     target_mesh=None,
     epsilon=None,
     iterations=None,
-    debug=False,
-    verbose=False,
     **kwargs,
 ):
     """Run MSM on a list of contrast between in data and ref data
@@ -61,10 +60,6 @@ def run_msm(
     iterations: int or str or None
         Number of iterations
         examples: 5 or "5,2,3,4"
-    debug : bool
-        Flag to run quickly first level of the optimization.
-    verbose : bool
-        Whether the algorithm is verbose or not.
 
     Returns
     -------
@@ -74,9 +69,9 @@ def run_msm(
         Image holding the transformed data in the target_mesh.
     """
     FSLDIR, FSL_CONFIG_PATH = utils.check_fsl()
-    if verbose:
-        print(f"FSLDIR: {FSLDIR}")
-        print(f"FSL_CONFIG_PATH: {FSL_CONFIG_PATH}")
+    logger = logging.getLogger("msm")
+    logger.info(f"FSLDIR: {FSLDIR}")
+    logger.info(f"FSL_CONFIG_PATH: {FSL_CONFIG_PATH}")
 
     if target_mesh is None:
         target_mesh = source_mesh

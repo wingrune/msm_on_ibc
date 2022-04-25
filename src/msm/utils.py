@@ -1,8 +1,18 @@
 import gzip
+import logging
 import nibabel as nib
 import os
 from tempfile import TemporaryDirectory
 import shutil
+
+
+def log_subprocess_output(pipe, err=False):
+    logger = logging.getLogger("msm")
+    for line in iter(pipe.readline, b""):
+        if err:
+            logger.warning(line.decode("utf-8"))
+        else:
+            logger.info(line.decode("utf-8"))
 
 
 def check_fsl():

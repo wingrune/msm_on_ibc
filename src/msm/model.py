@@ -1,3 +1,4 @@
+import logging
 import nibabel as nib
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -56,6 +57,12 @@ class MSM(BaseEstimator, TransformerMixin):
         self: object
             Fitted alignment
         """
+        logger = logging.getLogger("msm")
+        if verbose:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.WARNING)
+
         with TemporaryDirectory() as tmp_dir:
             source_filenames = []
             target_filenames = []
@@ -113,8 +120,6 @@ class MSM(BaseEstimator, TransformerMixin):
                 source_mesh=mesh_file,
                 target_contrasts_list=target_filenames,
                 epsilon=self.epsilon,
-                debug=debug,
-                verbose=verbose,
             )
 
             # Save computed transformation in model
