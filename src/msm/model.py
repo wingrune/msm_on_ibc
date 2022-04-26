@@ -213,7 +213,14 @@ class MSM(BaseEstimator, TransformerMixin):
                 with process.stdout:
                     utils.log_subprocess_output(process.stdout)
                 with process.stderr:
-                    utils.log_subprocess_output(process.stderr, err=True)
+                    utils.log_subprocess_output(
+                        process.stderr,
+                        err=True,
+                        silence=[
+                            # Silence this false warning from msmresample
+                            "** DA[1] has coordsys with intent NIFTI_INTENT_TRIANGLE (should be NIFTI_INTENT_POINTSET)"
+                        ],
+                    )
 
                 exit_code = process.wait()
 

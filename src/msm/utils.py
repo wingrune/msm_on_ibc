@@ -6,7 +6,18 @@ from tempfile import TemporaryDirectory
 import shutil
 
 
-def log_subprocess_output(pipe, err=False):
+def log_subprocess_output(pipe, err=False, silence=[]):
+    """Util function to log information throughout this package
+    using a common logger.
+
+    Parameters
+    ----------
+    pipe: a stream to read from
+    err: bool,
+        should this be printed as a warning or an info
+    silence: list of strings,
+        list of messages which should not be printed
+    """
     logging.getLogger("msm")
     for line in iter(pipe.readline, b""):
         if err:
