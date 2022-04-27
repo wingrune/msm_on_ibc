@@ -20,10 +20,13 @@ def log_subprocess_output(pipe, err=False, silence=[]):
     """
     logging.getLogger("msm")
     for line in iter(pipe.readline, b""):
-        if err:
-            logging.warning(line.decode("utf-8").strip())
-        else:
-            logging.info(line.decode("utf-8").strip())
+        message = line.decode("utf-8").strip()
+        # Exclude messages which should be silenced
+        if not any([message.startsWith(s) for s in silence]):
+            if err:
+                logging.warning(message)
+            else:
+                logging.info(message)
 
 
 def check_fsl():
