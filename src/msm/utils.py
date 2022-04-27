@@ -22,7 +22,7 @@ def log_subprocess_output(pipe, err=False, silence=[]):
     for line in iter(pipe.readline, b""):
         message = line.decode("utf-8").strip()
         # Exclude messages which should be silenced
-        if not any([message.startsWith(s) for s in silence]):
+        if not any([message.startswith(s) for s in silence]):
             if err:
                 logging.warning(message)
             else:
