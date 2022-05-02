@@ -59,7 +59,7 @@ def test_run():
         assert transformed_gii.darrays[0].data.shape[0] == n_voxels
 
 
-@pytest.mark.parametrize("iterations", [1, "1,1,1,1,1"])
+@pytest.mark.parametrize("iterations", [1, "1,1,1,1"])
 def test_run_iterations(iterations):
     """Main function run_msm should run without error."""
 

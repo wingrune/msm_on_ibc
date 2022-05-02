@@ -93,15 +93,15 @@ def run_msm(
         # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/MSM/UserGuide
         config_path = os.path.join(tmp_dir, "msm_config")
 
-        iteration_line = "--it=50,3,3,3,3"
+        iteration_line = "--it=50,3,3,3"
         if iterations is not None:
             if isinstance(iterations, int):
                 it = str(iterations)
-                iteration_line = f"--it={it},{it},{it},{it},{it}"
+                iteration_line = f"--it={it},{it},{it},{it}"
             elif isinstance(iterations, str):
                 iteration_line = f"--it={iterations}"
 
-        lambda_line = "--lambda=0,0.1,0.2,0.3,0.4"
+        lambda_line = "--lambda=0,0.1,0.2,0.3"
         if epsilon is not None:
             lambda_line = (
                 f"--lambda={epsilon},{epsilon},{epsilon},{epsilon},{epsilon}"
@@ -109,15 +109,15 @@ def run_msm(
 
         lines = "\n".join(
             [
-                "--simval=3,2,2,2,2",
-                "--sigma_in=2,2,2,2,1",
-                "--sigma_ref=2,2,2,2,1",
+                "--simval=3,2,2,2",
+                "--sigma_in=0,0,0,0",
+                "--sigma_ref=0,0,0,0",
                 lambda_line,
                 iteration_line,
-                "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE,DISCRETE",
-                "--CPgrid=6,1,2,3,4",
-                "--SGgrid=6,3,4,5,6",
-                "--datagrid=6,4,4,5,6",
+                "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE",
+                "--CPgrid=6,2,3,4",
+                "--SGgrid=6,4,5,6",
+                "--datagrid=6,4,5,6",
                 # "--regoption=1", # use the 2014 or 2018 version
                 "--regexp=2",
                 "--VN",
