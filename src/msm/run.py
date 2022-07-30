@@ -24,12 +24,8 @@ def prepare_darrays(darrays, coordsys):
         d.data = d.data.astype(np.float32)
         d.datatype = nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"]
         d.intent = nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"]
-        if d.coordsys is not None and not is_same_coordsys(
-            d.coordsys, coordsys
-        ):
-            raise ValueError(
-                "Provided data is in different coordsys than the mesh."
-            )
+        if d.coordsys is not None and not is_same_coordsys(d.coordsys, coordsys):
+            raise ValueError("Provided data is in different coordsys than the mesh.")
         d.coordsys = coordsys
 
     return darrays
@@ -93,7 +89,13 @@ def run_msm(
         # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/MSM/UserGuide
         config_path = os.path.join(tmp_dir, "msm_config")
 
-        iteration_line = "--it=50,3,3,3"
+        # lambda_line = "--lambda=0,0.2,0.2,0.2"
+        lambda_line = "--lambda=0,0.1,0.2,0.3"
+        if epsilon is not None:
+            lambda_line = f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
+
+        # iteration_line = "--it=50,20,25,25"
+        iteration_line = "--it=50,5,10,10"
         if iterations is not None:
             if isinstance(iterations, int):
                 it = str(iterations)
@@ -101,27 +103,38 @@ def run_msm(
             elif isinstance(iterations, str):
                 iteration_line = f"--it={iterations}"
 
-        lambda_line = "--lambda=0,0.1,0.2,0.3"
-        if epsilon is not None:
-            lambda_line = (
-                f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
-            )
-
         lines = "\n".join(
+            # https://github.com/ecr05/MSM_HOCR/blob/master/config/basic_configs/config_standard_MSM_strain
+            # [
+            #     "--simval=3,2,2,2",
+            #     "--sigma_in=0,0,0,0",
+            #     "--sigma_ref=0,0,0,0",
+            #     # "--lambda=0,0.2,0.2,0.2",
+            #     lambda_line,
+            #     # "--it=50,5,10,10",
+            #     iteration_line,
+            #     "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE",
+            #     "--CPgrid=6,2,3,4",
+            #     "--SGgrid=6,4,5,6",
+            #     "--datagrid=6,4,5,6",
+            #     # "--regoption=1", # use the 2014 or 2018 version
+            #     "--regexp=2",
+            #     "--VN",
+            #     "--rescaleL",
+            # ]
+            # https://github.com/ecr05/MSM_HOCR/blob/master/config/basic_configs/config_standard_MSMpair
             [
-                "--simval=3,2,2,2",
-                "--sigma_in=0,0,0,0",
-                "--sigma_ref=0,0,0,0",
+                "--sigma_in=6,6,4,2",
+                "--sigma_ref=6,6,4,2",
+                # "--lambda=0,0.1,0.2,0.3",
                 lambda_line,
+                # "--it=50,5,10,10"
                 iteration_line,
                 "--opt=AFFINE,DISCRETE,DISCRETE,DISCRETE",
-                "--CPgrid=6,2,3,4",
-                "--SGgrid=6,4,5,6",
-                "--datagrid=6,4,5,6",
-                # "--regoption=1", # use the 2014 or 2018 version
-                "--regexp=2",
-                "--VN",
-                "--rescaleL",
+                "--CPgrid=0,2,3,4",
+                "--SGgrid=0,4,5,6",
+                "--datagrid=5,5,5,6",
+                # "--regoption=1",
             ]
         )
 
@@ -158,15 +171,11 @@ def run_msm(
         # If input meshes are compressed, decompress them
         # in temporary files and update mesh path
         if source_mesh.endswith(".gz"):
-            tmp_source_mesh = os.path.join(
-                tmp_dir, os.path.basename(source_mesh[:-3])
-            )
+            tmp_source_mesh = os.path.join(tmp_dir, os.path.basename(source_mesh[:-3]))
             utils.ungzip(source_mesh, tmp_source_mesh)
             source_mesh = tmp_source_mesh
         if target_mesh.endswith(".gz"):
-            tmp_target_mesh = os.path.join(
-                tmp_dir, os.path.basename(target_mesh[:-3])
-            )
+            tmp_target_mesh = os.path.join(tmp_dir, os.path.basename(target_mesh[:-3]))
             utils.ungzip(target_mesh, tmp_target_mesh)
             target_mesh = tmp_target_mesh
 
@@ -188,9 +197,7 @@ def run_msm(
             )
         )
 
-        process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         with process.stdout:
             utils.log_subprocess_output(process.stdout)
