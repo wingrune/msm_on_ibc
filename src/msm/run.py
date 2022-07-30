@@ -104,7 +104,7 @@ def run_msm(
         lambda_line = "--lambda=0,0.1,0.2,0.3"
         if epsilon is not None:
             lambda_line = (
-                f"--lambda={epsilon},{epsilon},{epsilon},{epsilon},{epsilon}"
+                f"--lambda={epsilon},{epsilon},{epsilon},{epsilon}"
             )
 
         lines = "\n".join(
