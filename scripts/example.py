@@ -72,7 +72,7 @@ target_array = np.stack(
 
 msm.load_model(
     model_path="../outputs/_051_alignment_method_comparison/transformed_in_mesh.surf.gii",
-    mesh_path="../data/lh.sphere.gii"
+    source_mesh="../data/lh.sphere.gii",
 )
 # %% Evaluate model
 

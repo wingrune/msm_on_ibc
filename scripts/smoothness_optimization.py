@@ -78,7 +78,7 @@ if new_split:
                 for source_fname in train_data_source
             ],
             axis=0,
-        )
+        ),
     }
 
     test_data = {
@@ -97,7 +97,7 @@ if new_split:
                 if source_fname not in train_data_source
             ],
             axis=0,
-        )
+        ),
     }
 
     with open("train.json", "w") as outfile:
@@ -146,7 +146,7 @@ for epsilon in epsilons:
     output_dir = "../outputs/" f"test_outputs_lambda_{epsilon}"
     msm.load_model(
         model_path=os.path.join(output_dir, "transformed_in_mesh.surf.gii"),
-        mesh_path=spherical_mesh
+        source_mesh=spherical_mesh,
     )
 
     # Transform map
@@ -154,12 +154,8 @@ for epsilon in epsilons:
 
     # Compute R2 score before and after transformation
 
-    score_model[epsilon] = np.mean(
-        msm.score(transformed_map, test_data["target"])
-    )
-    base_score[epsilon] = np.mean(
-        msm.score(test_data["source"], test_data["target"])
-    )
+    score_model[epsilon] = np.mean(msm.score(transformed_map, test_data["target"]))
+    base_score[epsilon] = np.mean(msm.score(test_data["source"], test_data["target"]))
 
 print(score_model)
 print(base_score)

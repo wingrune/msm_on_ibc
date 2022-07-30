@@ -28,7 +28,7 @@ def test_align_random_data():
     target_train_data = np.ones((2, n_voxels))
 
     # align maps
-    m.fit(source_train_data, target_train_data, mesh_file=fs3.sphere_left)
+    m.fit(source_train_data, target_train_data, source_mesh=fs3.sphere_left)
 
     # align new data from source to target
     source_test_data = np.random.rand(4, n_voxels)

@@ -32,7 +32,8 @@ class MSM(BaseEstimator, TransformerMixin):
         self,
         source_data,
         target_data,
-        mesh_file=None,
+        source_mesh=None,
+        target_mesh=None,
         verbose=False,
         debug=False,
         **kwargs,
@@ -49,8 +50,10 @@ class MSM(BaseEstimator, TransformerMixin):
         target_data: ndarray(n_samples, n_features)
             Contrast maps for target subject.
             Length should match that of source_data
-        mesh_file: str
-            Path to mesh used for source and target
+        source_mesh, target_mesh: str
+            Path to mesh used for source and target.
+            Note that if target_mesh is not specified,
+            the source_mesh will be used for all input data.
         output_dir: str
             Path to outputed files
 
@@ -73,8 +76,12 @@ class MSM(BaseEstimator, TransformerMixin):
             # (this is needed because transform calls msm resampling
             # which requires the mesh, but transform can be called on
             # a different machine than fit if the model is saved and loaded)
-            self.mesh = utils.gifti_from_file(mesh_file)
-            coordsys = self.mesh.darrays[0].coordsys
+            if target_mesh is None:
+                target_mesh = source_mesh
+            self.source_mesh = utils.gifti_from_file(source_mesh)
+            source_coordsys = self.source_mesh.darrays[0].coordsys
+            self.target_mesh = utils.gifti_from_file(target_mesh)
+            target_coordsys = self.target_mesh.darrays[0].coordsys
 
             # All inputed contrast maps need to be written
             # as gifti files in order to be used with MSM
@@ -86,13 +93,9 @@ class MSM(BaseEstimator, TransformerMixin):
 
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
                     data=contrast,
-                    datatype=nib.nifti1.data_type_codes.code[
-                        "NIFTI_TYPE_FLOAT32"
-                    ],
-                    intent=nib.nifti1.intent_codes.code[
-                        "NIFTI_INTENT_POINTSET"
-                    ],
-                    coordsys=coordsys,
+                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
+                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
+                    coordsys=source_coordsys,
                 )
                 contrast_image = nib.gifti.gifti.GiftiImage()
                 contrast_image.add_gifti_data_array(contrast_data_array)
@@ -104,13 +107,9 @@ class MSM(BaseEstimator, TransformerMixin):
                 target_filenames.append(filename)
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
                     data=contrast,
-                    datatype=nib.nifti1.data_type_codes.code[
-                        "NIFTI_TYPE_FLOAT32"
-                    ],
-                    intent=nib.nifti1.intent_codes.code[
-                        "NIFTI_INTENT_POINTSET"
-                    ],
-                    coordsys=coordsys,
+                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
+                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
+                    coordsys=target_coordsys,
                 )
                 contrast_image = nib.gifti.gifti.GiftiImage()
                 contrast_image.add_gifti_data_array(contrast_data_array)
@@ -119,8 +118,9 @@ class MSM(BaseEstimator, TransformerMixin):
             # Run msm
             transformed_mesh, _ = run_msm(
                 source_contrasts_list=source_filenames,
-                source_mesh=mesh_file,
+                source_mesh=source_mesh,
                 target_contrasts_list=target_filenames,
+                target_mesh=target_mesh,
                 epsilon=self.epsilon,
             )
 
@@ -161,24 +161,18 @@ class MSM(BaseEstimator, TransformerMixin):
             self.transformed_mesh.to_filename(transformed_mesh_path)
 
             # Create temporary gifti file containing mesh
-            mesh_path = str(Path(tmp_dir) / "mesh.gii")
-            self.mesh.to_filename(mesh_path)
+            target_mesh_path = str(Path(tmp_dir) / "target_mesh.gii")
+            self.target_mesh.to_filename(target_mesh_path)
 
             # Write each source contrast map to a gifti file
             for i, contrast in enumerate(source_data):
-                source_contrast_filename = str(
-                    Path(tmp_dir) / f"source_{i}.func.gii"
-                )
+                source_contrast_filename = str(Path(tmp_dir) / f"source_{i}.func.gii")
 
                 contrast_data_array = nib.gifti.gifti.GiftiDataArray(
                     data=contrast,
-                    datatype=nib.nifti1.data_type_codes.code[
-                        "NIFTI_TYPE_FLOAT32"
-                    ],
-                    intent=nib.nifti1.intent_codes.code[
-                        "NIFTI_INTENT_POINTSET"
-                    ],
-                    coordsys=self.mesh.darrays[0].coordsys,
+                    datatype=nib.nifti1.data_type_codes.code["NIFTI_TYPE_FLOAT32"],
+                    intent=nib.nifti1.intent_codes.code["NIFTI_INTENT_POINTSET"],
+                    coordsys=self.source_mesh.darrays[0].coordsys,
                 )
 
                 contrast_image = nib.gifti.gifti.GiftiImage()
@@ -189,9 +183,7 @@ class MSM(BaseEstimator, TransformerMixin):
                 contrast_image.add_gifti_data_array(contrast_data_array)
                 contrast_image.to_filename(source_contrast_filename)
 
-                predicted_contrast_path = str(
-                    Path(tmp_dir) / "predicted_contrast"
-                )
+                predicted_contrast_path = str(Path(tmp_dir) / "predicted_contrast")
 
                 # Map source_data onto target mesh
                 cmd = shlex.split(
@@ -201,7 +193,7 @@ class MSM(BaseEstimator, TransformerMixin):
                             f"{transformed_mesh_path}",
                             predicted_contrast_path,
                             f"-labels {source_contrast_filename}",
-                            f"-project {mesh_path}",
+                            f"-project {target_mesh_path}",
                         ]
                     )
                 )
@@ -232,9 +224,7 @@ class MSM(BaseEstimator, TransformerMixin):
                 # Load predicted contrast map ndarray and append it
                 # to result list
                 predicted_contrast_map = (
-                    nib.load(f"{predicted_contrast_path}.func.gii")
-                    .darrays[0]
-                    .data
+                    nib.load(f"{predicted_contrast_path}.func.gii").darrays[0].data
                 )
                 predicted_contrast_map = predicted_contrast_map.astype(
                     source_data.dtype
@@ -279,7 +269,7 @@ class MSM(BaseEstimator, TransformerMixin):
 
         return score
 
-    def load_model(self, model_path, mesh_path):
+    def load_model(self, model_path, source_mesh, target_mesh=None):
         """
         Load fitted model from file
 
@@ -290,15 +280,20 @@ class MSM(BaseEstimator, TransformerMixin):
             After fitting the model is usually saved in
             Path(output_dir) / "transformed_in_mesh.surf.gii"
 
-        mesh_path: str
+        source_mesh, target_mesh: str
             Path to mesh used for source and target
-
+            Note that if target_mesh is not specified,
+            the source_mesh will be used for all input data.
         Returns
         -------
         self: object
             Loaded fitted alignment
         """
         self.transformed_mesh = nib.load(model_path)
-        self.mesh = utils.gifti_from_file(mesh_path)
+        self.source_mesh = utils.gifti_from_file(source_mesh)
+        if target_mesh is None:
+            self.target_mesh = utils.gifti_from_file(source_mesh)
+        else:
+            self.target_mesh = utils.gifti_from_file(target_mesh)
 
         return self
